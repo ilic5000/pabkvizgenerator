@@ -5,6 +5,7 @@ import sys
 
 fileName = 'potjera-e1320-frame.jpg'
 #fileName = 'potera-srpska.png'
+#fileName = 'prosta-slika-test.png'
 
 def nothing(x):
     # dummy
@@ -12,7 +13,7 @@ def nothing(x):
 
 cv2.namedWindow("HSVTrackbars")
 
-# green mask
+# green mask (hsv 31,23,0 to 84, 255, 255)
 cv2.createTrackbar("Lower-H", "HSVTrackbars", 31, 180, nothing)
 cv2.createTrackbar("Lower-S", "HSVTrackbars", 23, 255, nothing)
 cv2.createTrackbar("Lower-V", "HSVTrackbars", 0, 255, nothing)
@@ -20,7 +21,6 @@ cv2.createTrackbar("Lower-V", "HSVTrackbars", 0, 255, nothing)
 cv2.createTrackbar("Upper-H", "HSVTrackbars", 84, 180, nothing)
 cv2.createTrackbar("Upper-S", "HSVTrackbars", 255, 255, nothing)
 cv2.createTrackbar("Upper-V", "HSVTrackbars", 255, 255, nothing)
-
 
 image = cv2.imread(fileName)
 
@@ -65,13 +65,13 @@ while True:
 
     for cnt in contours2:
         area = cv2.contourArea(cnt)
-        approx = cv2.approxPolyDP(cnt, 0.01 * cv2.arcLength(cnt, True), True)
+        approx = cv2.approxPolyDP(cnt, 0.02 * cv2.arcLength(cnt, True), True)
 
+        #print('len contours2 %d' %len(contours2)) 
         if len(approx) == 4:
-            print('dobro je')
-        if area > 3500:
-            cv2.drawContours(original_img_preview, [approx], 0, (0, 0, 255), 1)
-
+            print('len approx %d' %len(approx))
+            if area > 5000:
+                cv2.drawContours(original_img_preview, [approx], 0, (0, 0, 255), 1)
 
     cv2.imshow('mask', mask_half)
     cv2.imshow('Original preview', original_img_preview)
@@ -88,5 +88,8 @@ while True:
 
 #cv2.imwrite("mask-test.jpg", mask)     # save frame as JPEG file 
 #cv2.imwrite("mask-original-test.jpg", image)
+
+
+
 
 print('Done.')

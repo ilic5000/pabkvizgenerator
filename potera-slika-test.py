@@ -4,13 +4,13 @@ import numpy
 import sys
 import easyocr
 
-#fileName = 'hrvatskalosakval.png'
+fileName = 'potjera-e1320-isecena.mp4-124-answer.jpg'
 #fileName = 'potera-srpska.png'
-fileName = 'potera-srpska-2.png'
+#fileName = 'potera-srpska-2.png'
 #fileName = 'potera-srpska-3.png'
 #fileName = 'prosta-slika-test.png'
 
-writeDebugInfoOnImages = False
+writeDebugInfoOnImages = True
 percentageOfAreaThreshold = 0.0030
 resizeImagePercentage = 1
 
@@ -25,11 +25,7 @@ def nothing(x):
     pass
 
 def listToString(s):
-   
-    # initialize an empty string
     str1 = " "
-   
-    # return string 
     return (str1.join(s))
 
 def scale_contour(cnt, scale):
@@ -96,7 +92,6 @@ def calculateMinMaxPoints(font, original_img_preview, original_img_previewHeight
         i = i + 1
     return ymin,ymax,xmin,xmax
 
-
 cv2.namedWindow("HSVTrackbarsGreen")
 cv2.createTrackbar("Lower-H", "HSVTrackbarsGreen", 31, 180, nothing)
 cv2.createTrackbar("Lower-S", "HSVTrackbarsGreen", 23, 255, nothing)
@@ -128,24 +123,24 @@ while True:
     original_img_preview = cv2.resize(image, (0, 0), fx=resizeImagePercentage, fy=resizeImagePercentage)
     original_img_previewHeight, original_img_previewWidth, channels = original_img_preview.shape 
 
-    seekAreaBorderHorizontalY = 2 * int(original_img_previewHeight/3)
-    seekAreaBorderHorizontalXStart = 0
-    seekAreaBorderHorizontalXEnd = original_img_previewWidth
+    seekAreaBorderHorizontalLineY = 2 * int(original_img_previewHeight/3)
+    seekAreaBorderHorizontalLineXStart = 0
+    seekAreaBorderHorizontalLineXEnd = original_img_previewWidth
 
     if writeDebugInfoOnImages:
-        cv2.line(original_img_preview, (seekAreaBorderHorizontalXStart, seekAreaBorderHorizontalY), (seekAreaBorderHorizontalXEnd, seekAreaBorderHorizontalY), (0, 255, 0), thickness=2)
+        cv2.line(original_img_preview, (seekAreaBorderHorizontalLineXStart, seekAreaBorderHorizontalLineY), (seekAreaBorderHorizontalLineXEnd, seekAreaBorderHorizontalLineY), (0, 255, 0), thickness=2)
     
     seekAreaBorderLeftX = int(original_img_previewWidth/9.1)
     seekAreaBorderLeftY = original_img_previewHeight
 
     if writeDebugInfoOnImages: 
-        cv2.line(original_img_preview, (seekAreaBorderLeftX, seekAreaBorderHorizontalY), (seekAreaBorderLeftX, seekAreaBorderLeftY), (0, 255, 0), thickness=2)
+        cv2.line(original_img_preview, (seekAreaBorderLeftX, seekAreaBorderHorizontalLineY), (seekAreaBorderLeftX, seekAreaBorderLeftY), (0, 255, 0), thickness=2)
 
     seekAreaBorderRightX = int(8.1 * int(original_img_previewWidth/9.1))
     seekAreaBorderRightY = original_img_previewHeight
 
     if writeDebugInfoOnImages:
-        cv2.line(original_img_preview, (seekAreaBorderRightX, seekAreaBorderHorizontalY), (seekAreaBorderRightX, seekAreaBorderRightY), (0, 255, 0), thickness=2)
+        cv2.line(original_img_preview, (seekAreaBorderRightX, seekAreaBorderHorizontalLineY), (seekAreaBorderRightX, seekAreaBorderRightY), (0, 255, 0), thickness=2)
 
     green_l_h = cv2.getTrackbarPos("Lower-H", "HSVTrackbarsGreen")
     green_l_s = cv2.getTrackbarPos("Lower-S", "HSVTrackbarsGreen")
@@ -209,7 +204,7 @@ while True:
         approx = cv2.approxPolyDP(cnt, 0.02 * cv2.arcLength(cnt, True), True)
         numberOfPoints = len(approx)
 
-        if area > maxGreenArea and numberOfPoints >= 4 and numberOfPoints <= 6 and area > areaThreashold and areAllPointsInsideSeekBorderArea(approx, seekAreaBorderHorizontalY, seekAreaBorderHorizontalXStart, seekAreaBorderHorizontalXEnd):
+        if area > maxGreenArea and numberOfPoints >= 4 and numberOfPoints <= 6 and area > areaThreashold and areAllPointsInsideSeekBorderArea(approx, seekAreaBorderHorizontalLineY, seekAreaBorderHorizontalLineXStart, seekAreaBorderHorizontalLineXEnd):
                 green_ymin, green_ymax, green_xmin, green_xmax = calculateMinMaxPoints(font, original_img_preview, original_img_previewHeight, original_img_previewWidth, approx)
                 maxGreenArea = area
                 maxGreenAreaContour = scale_contour(cnt, 1.01)
@@ -229,7 +224,7 @@ while True:
         approx = cv2.approxPolyDP(cnt, 0.02 * cv2.arcLength(cnt, True), True)
         numberOfPoints = len(approx)
         
-        if area > maxBlueArea and numberOfPoints >= 4 and numberOfPoints <= 6 and area > areaThreashold and area > 3 * maxGreenArea and areAllPointsInsideSeekBorderArea(approx, seekAreaBorderHorizontalY, seekAreaBorderHorizontalXStart, seekAreaBorderHorizontalXEnd):
+        if area > maxBlueArea and numberOfPoints >= 4 and numberOfPoints <= 6 and area > areaThreashold and area > 3 * maxGreenArea and areAllPointsInsideSeekBorderArea(approx, seekAreaBorderHorizontalLineY, seekAreaBorderHorizontalLineXStart, seekAreaBorderHorizontalLineXEnd):
                 blue_ymin, blue_ymax, blue_xmin, blue_xmax = calculateMinMaxPoints(font, original_img_preview, original_img_previewHeight, original_img_previewWidth, approx) 
                 maxBlueArea = area
                 maxBlueAreaContour = scale_contour(cnt, 1.01)

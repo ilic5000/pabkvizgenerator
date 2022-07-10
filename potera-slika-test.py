@@ -3,9 +3,9 @@ import cv2
 import numpy
 import sys
 
-fileName = 'potjera-e1320-frame.jpg'
+#fileName = 'potjera-e1320-frame.jpg'
 #fileName = 'potera-srpska.png'
-#fileName = 'potera-srpska-2.png'
+fileName = 'potera-srpska-2.png'
 #fileName = 'prosta-slika-test.png'
 
 percentageOfAreaThreshold = 0.0025
@@ -126,64 +126,50 @@ while True:
     kernel_half_blue = numpy.ones((2,2), numpy.uint8)
     blue_mask_half = cv2.erode(blue_mask_half, kernel_half_blue)
 
-    #contours, _ = cv2.findContours(mask, cv2.RETR_TREE,  cv2.CHAIN_APPROX_SIMPLE)
     contoursInGreenMask, _ = cv2.findContours(green_mask_half, cv2.RETR_TREE,  cv2.CHAIN_APPROX_SIMPLE)
     contoursInBlueMask, _ = cv2.findContours(blue_mask_half, cv2.RETR_TREE,  cv2.CHAIN_APPROX_SIMPLE)
 
-    #for cnt in contours:
-        #approx = cv2.approxPolyDP(cnt, 0.01 * cv2.arcLength(cnt, True), True)
-        #cv2.drawContours(image, [approx], 0, (255, 0, 0), 2)
-
     totalPixels = original_img_previewHeight * original_img_previewWidth
     areaThreashold = percentageOfAreaThreshold * totalPixels
-    greenContureArea = 0
+
+    maxGreenArea = 0 
+    maxGreenAreaContour = None
+    maxGreenAreaContourApprox = None
 
     for cnt in contoursInGreenMask:
         area = cv2.contourArea(cnt)
         approx = cv2.approxPolyDP(cnt, 0.02 * cv2.arcLength(cnt, True), True)
-        cv2.drawContours(original_img_preview, [approx], 0, (0, 0, 200), 1)
+        numberOfPoints = len(approx)
 
-        #print('len contours2 %d' %len(contours2)) 
-        if len(approx) == 4:
-            #print('len approx %d' %len(approx))
-            if area > areaThreashold:
-                greenContureArea = area
-                print('area %d' %area)
-                cv2.drawContours(original_img_preview, [approx], 0, (0, 0, 255), 2)
+        if area > maxGreenArea and numberOfPoints == 4 and area > areaThreashold:
+            maxGreenArea = area
+            maxGreenAreaContour = cnt
+            maxGreenAreaContourApprox = approx
 
-                ymin, ymax, xmin, xmax = calculateMinMaxPoints(font, original_img_preview, 
-                                            original_img_previewHeight, original_img_previewWidth, approx)
-                
-                textYMinMax = "green ymin: " + str(ymin) + " ymax: " + str(ymax)
-                textXMinMax = "green xmin: " + str(xmin) + " xmax: " + str(xmax)
-                cv2.putText(original_img_preview, textYMinMax, (0, 100), 
-                            font, 0.5, (0, 0, 255)) 
-                cv2.putText(original_img_preview, textXMinMax, (0, 120), 
-                            font, 0.5, (0, 0, 255)) 
-                #break
+    green_ymin, green_ymax, green_xmin, green_xmax = None, None, None, None
+    if maxGreenArea > 0:
+        cv2.drawContours(original_img_preview, [maxGreenAreaContourApprox], 0, (0, 255, 0), 2)
+
+        green_ymin, green_ymax, green_xmin, green_xmax = calculateMinMaxPoints(font, original_img_preview, original_img_previewHeight, original_img_previewWidth, maxGreenAreaContourApprox)
+
+    maxBlueArea = 0 
+    maxBlueAreaContour = None
+    maxBlueAreaContourApprox = None
 
     for cnt in contoursInBlueMask:
         area = cv2.contourArea(cnt)
         approx = cv2.approxPolyDP(cnt, 0.02 * cv2.arcLength(cnt, True), True)
-        cv2.drawContours(original_img_preview, [approx], 0, (100, 0, 200), 1)
+        numberOfPoints = len(approx)
 
-        #print('len contours2 %d' %len(contours2)) 
-        if len(approx) == 4:
-            #print('len approx %d' %len(approx))
-            if area > areaThreashold : 
-                #print('area %d' %area)
-                cv2.drawContours(original_img_preview, [approx], 0, (14, 59, 255), 2)
+        if area > maxBlueArea and numberOfPoints == 4 and area > areaThreashold and area > 3 * maxGreenArea: 
+            maxBlueArea = area
+            maxBlueAreaContour = cnt
+            maxBlueAreaContourApprox = approx
 
-                ymin, ymax, xmin, xmax = calculateMinMaxPoints(font, original_img_preview, 
-                                            original_img_previewHeight, original_img_previewWidth, approx)
-                
-                textYMinMax = "blue ymin: " + str(ymin) + " ymax: " + str(ymax)
-                textXMinMax = "blue xmin: " + str(xmin) + " xmax: " + str(xmax)
-                cv2.putText(original_img_preview, textYMinMax, (0, 140), 
-                            font, 0.5, (0, 0, 255)) 
-                cv2.putText(original_img_preview, textXMinMax, (0, 160), 
-                            font, 0.5, (0, 0, 255))
-                #break
+    blue_ymin, blue_ymax, blue_xmin, blue_xmax = None, None, None, None
+    if maxBlueArea > 0:
+            cv2.drawContours(original_img_preview, [maxBlueAreaContourApprox], 0, (255, 0, 0), 2)
+            blue_ymin, blue_ymax, blue_xmin, blue_xmax = calculateMinMaxPoints(font, original_img_preview, original_img_previewHeight, original_img_previewWidth, maxBlueAreaContourApprox)
 
     lowerThirdYUpper = 2 * int(original_img_previewHeight/3)
     line_thickness = 2

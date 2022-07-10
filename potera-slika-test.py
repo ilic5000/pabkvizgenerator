@@ -9,9 +9,11 @@ fileName = 'potjera-e1320-frame.jpg'
 #fileName = 'potera-srpska-3.png'
 #fileName = 'prosta-slika-test.png'
 
+writeDebugInfoOnImages = False
 percentageOfAreaThreshold = 0.0030
 resizeImagePercentage = 0.5
 font = cv2.FONT_HERSHEY_COMPLEX
+
 
 def nothing(x):
     # dummy
@@ -57,10 +59,11 @@ def calculateMinMaxPoints(font, original_img_preview, original_img_previewHeight
 
             if x > xmax:
                 xmax = x
-                        
-            textCoordinate = str(x) + " " + str(y) 
-            cv2.putText(original_img_preview, textCoordinate, (x, y), 
-                                    font, 0.5, (0, 0, 255)) 
+            
+            if writeDebugInfoOnImages:
+                textCoordinate = str(x) + " " + str(y) 
+                cv2.putText(original_img_preview, textCoordinate, (x, y), 
+                                        font, 0.5, (0, 0, 255)) 
         i = i + 1
     return ymin,ymax,xmin,xmax
 
@@ -99,15 +102,21 @@ while True:
     seekAreaBorderHorizontalY = 2 * int(original_img_previewHeight/3)
     seekAreaBorderHorizontalXStart = 0
     seekAreaBorderHorizontalXEnd = original_img_previewWidth
-    cv2.line(original_img_preview, (seekAreaBorderHorizontalXStart, seekAreaBorderHorizontalY), (seekAreaBorderHorizontalXEnd, seekAreaBorderHorizontalY), (0, 255, 0), thickness=2)
+
+    if writeDebugInfoOnImages:
+        cv2.line(original_img_preview, (seekAreaBorderHorizontalXStart, seekAreaBorderHorizontalY), (seekAreaBorderHorizontalXEnd, seekAreaBorderHorizontalY), (0, 255, 0), thickness=2)
     
     seekAreaBorderLeftX = int(original_img_previewWidth/9.1)
     seekAreaBorderLeftY = original_img_previewHeight
-    cv2.line(original_img_preview, (seekAreaBorderLeftX, seekAreaBorderHorizontalY), (seekAreaBorderLeftX, seekAreaBorderLeftY), (0, 255, 0), thickness=2)
+
+    if writeDebugInfoOnImages: 
+        cv2.line(original_img_preview, (seekAreaBorderLeftX, seekAreaBorderHorizontalY), (seekAreaBorderLeftX, seekAreaBorderLeftY), (0, 255, 0), thickness=2)
 
     seekAreaBorderRightX = int(8.1 * int(original_img_previewWidth/9.1))
     seekAreaBorderRightY = original_img_previewHeight
-    cv2.line(original_img_preview, (seekAreaBorderRightX, seekAreaBorderHorizontalY), (seekAreaBorderRightX, seekAreaBorderRightY), (0, 255, 0), thickness=2)
+
+    if writeDebugInfoOnImages:
+        cv2.line(original_img_preview, (seekAreaBorderRightX, seekAreaBorderHorizontalY), (seekAreaBorderRightX, seekAreaBorderRightY), (0, 255, 0), thickness=2)
 
     green_l_h = cv2.getTrackbarPos("Lower-H", "HSVTrackbarsGreen")
     green_l_s = cv2.getTrackbarPos("Lower-S", "HSVTrackbarsGreen")
@@ -179,7 +188,8 @@ while True:
                 maxGreenAreaContourApprox = scale_contour(approx, 1.01)
     
     if maxGreenArea > 0:
-        cv2.drawContours(original_img_preview, [maxGreenAreaContourApprox], 0, (0, 255, 0), 2)
+        if writeDebugInfoOnImages:
+            cv2.drawContours(original_img_preview, [maxGreenAreaContourApprox], 0, (0, 255, 0), 2)
 
     maxBlueArea = 0 
     maxBlueAreaContour = None
@@ -199,20 +209,24 @@ while True:
                 maxBlueAreaContourApprox = scale_contour(approx, 1.01)
 
     if maxBlueArea > 0:
-            cv2.drawContours(original_img_preview, [maxBlueAreaContourApprox], 0, (255, 0, 0), 2)
+            if writeDebugInfoOnImages:
+                cv2.drawContours(original_img_preview, [maxBlueAreaContourApprox], 0, (255, 0, 0), 2)
             
     cv2.imshow('green mask', green_mask_half)
     cv2.imshow('blue mask', blue_mask_half)
     cv2.imshow('Original preview', original_img_preview)
 
-    #cv2.imshow('Original full + contours', image)
-    #cv2.imshow("image", mask)
-
     key = cv2.waitKey(1)
     if key == 27: # ESC
         break
 
-#cv2.imwrite("mask-test.jpg", mask)     # save frame as JPEG file 
-#cv2.imwrite("mask-original-test.jpg", image)
+if maxGreenArea > 0 and maxBlueArea > 0:
+    questionRectangleImage = original_img_preview[blue_ymin:blue_ymax, blue_xmin:blue_xmax]
+    answerRectangleImage = original_img_preview[green_ymin:green_ymax, green_xmin:green_xmax]
+    cv2.imwrite("results/question.jpg", questionRectangleImage) 
+    cv2.imwrite("results/answer.jpg", answerRectangleImage)
+    print('Success!')
+else:
+    print('Error: Question/Answer not found!')
 
 print('Done.')

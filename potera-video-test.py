@@ -9,7 +9,7 @@ def print_progress_bar(index, total, label):
     sys.stdout.write(f"[{'=' * int(n_bar * progress):{n_bar}s}] {int(100 * progress)}%  {label}")
     sys.stdout.flush()
 
-fileName = 'potjera-e1320-isecena-najkrace.mp4'
+fileName = 'PoteraS7E28-full.mp4'
 
 videoFile = cv2.VideoCapture(fileName)
 success,originalFrame = videoFile.read()
@@ -46,10 +46,11 @@ while success:
                 
                 # https://subscription.packtpub.com/book/application-development/9781788474443/1/ch01lvl1sec15/jumping-between-frames-in-video-files
                 howManyFramesToJump = 450
-                videoFile.set(cv2.CAP_PROP_POS_FRAMES, howManyFramesToJump)
                 frameIndex += howManyFramesToJump
+                videoFile.set(cv2.CAP_PROP_POS_FRAMES, frameIndex)
   
     success,originalFrame = videoFile.read()
     #print('Read a new frame: ', success)
     frameIndex += 1
-print("DONE!")
+
+print("\n All DONE!")

@@ -22,6 +22,8 @@ cv2.createTrackbar("Upper-H", "HSVTrackbars", 84, 180, nothing)
 cv2.createTrackbar("Upper-S", "HSVTrackbars", 255, 255, nothing)
 cv2.createTrackbar("Upper-V", "HSVTrackbars", 255, 255, nothing)
 
+font = cv2.FONT_HERSHEY_COMPLEX
+
 image = cv2.imread(fileName)
 
 if image is None:
@@ -45,6 +47,7 @@ while True:
     # must be in the loop (reload empty image/frame)
     original_img_preview = cv2.resize(image, (0, 0), fx=0.5, fy=0.5)
 
+    original_img_previewHeight, original_img_previewWidth, channels = original_img_preview.shape 
     mask = cv2.inRange(hsvImage, lower_hsv, upper_hsv)
 
     # Erode mask
@@ -69,12 +72,66 @@ while True:
 
         #print('len contours2 %d' %len(contours2)) 
         if len(approx) == 4:
-            print('len approx %d' %len(approx))
+            #print('len approx %d' %len(approx))
             if area > 5000:
-                cv2.drawContours(original_img_preview, [approx], 0, (0, 0, 255), 1)
+                #print('area %d' %area)
+                cv2.drawContours(original_img_preview, [approx], 0, (0, 0, 255), 2)
+
+                #https://www.geeksforgeeks.org/find-co-ordinates-of-contours-using-opencv-python/
+
+                n = approx.ravel() 
+                i = 0
+                ymin = original_img_previewHeight
+                ymax = 0
+                xmin = original_img_previewWidth
+                xmax = 0
+
+                for j in n :
+                    if(i % 2 == 0):
+                        x = n[i]
+                        y = n[i + 1]
+
+                        if y < ymin:
+                            ymin = y
+
+                        if y > ymax:
+                            ymax = y
+
+                        if x < xmin:
+                            xmin = x
+
+                        if x > xmax:
+                            xmax = x
+                        
+                        textCoordinate = str(x) + " " + str(y) 
+                        cv2.putText(original_img_preview, textCoordinate, (x, y), 
+                                    font, 0.5, (0, 0, 255)) 
+                    i = i + 1
+                
+                textYMinMax = "ymin: " + str(ymin) + " ymax: " + str(ymax)
+                textXMinMax = "xmin: " + str(xmin) + " xmax: " + str(xmax)
+                cv2.putText(original_img_preview, textYMinMax, (0, 100), 
+                            font, 0.5, (0, 0, 255)) 
+                cv2.putText(original_img_preview, textXMinMax, (0, 120), 
+                            font, 0.5, (0, 0, 255)) 
+
+
+    lowerThirdYUpper = 2 * int(original_img_previewHeight/3)
+    line_thickness = 2
+    cv2.line(original_img_preview, (0, lowerThirdYUpper), (original_img_previewWidth, lowerThirdYUpper), (0, 255, 0), thickness=line_thickness)
+    
+    lowerEightXLower = int(original_img_previewWidth/8.5)
+    line_thickness = 2
+    cv2.line(original_img_preview, (lowerEightXLower, lowerThirdYUpper), (lowerEightXLower, original_img_previewHeight), (0, 255, 0), thickness=line_thickness)
+
+    lowerEightXUpper = int(7.5 * int(original_img_previewWidth/8.5))
+    line_thickness = 2
+    cv2.line(original_img_preview, (lowerEightXUpper, lowerThirdYUpper), (lowerEightXUpper, original_img_previewHeight), (0, 255, 0), thickness=line_thickness)
 
     cv2.imshow('mask', mask_half)
     cv2.imshow('Original preview', original_img_preview)
+
+
     #cv2.imshow('Original full + contours', image)
     #cv2.imshow("image", mask)
 

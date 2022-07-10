@@ -4,7 +4,7 @@ import numpy
 import sys
 import easyocr
 
-fileName = 'potjera-e1320-frame.jpg'
+fileName = 'hrvatskalosakval.png'
 #fileName = 'potera-srpska.png'
 #fileName = 'potera-srpska-2.png'
 #fileName = 'potera-srpska-3.png'
@@ -46,6 +46,22 @@ def scale_contour(cnt, scale):
     cnt_scaled = cnt_scaled.astype(numpy.int32)
 
     return cnt_scaled
+
+def areAllPointsInsideSeekBorderArea(approx, seekAreaBorderHorizontalY, seekAreaBorderHorizontalXStart, seekAreaBorderHorizontalXEnd):
+    result = True 
+    n = approx.ravel() 
+    i = 0
+    for j in n :
+        if(i % 2 == 0):
+            x = n[i]
+            y = n[i + 1]
+            if y < seekAreaBorderHorizontalY or x < seekAreaBorderHorizontalXStart or x > seekAreaBorderHorizontalXEnd:
+                result = False
+                break
+        
+        i = i + 1
+
+    return result
 
 def calculateMinMaxPoints(font, original_img_preview, original_img_previewHeight, original_img_previewWidth, approx):
     #https://www.geeksforgeeks.org/find-co-ordinates-of-contours-using-opencv-python/
@@ -193,9 +209,8 @@ while True:
         approx = cv2.approxPolyDP(cnt, 0.02 * cv2.arcLength(cnt, True), True)
         numberOfPoints = len(approx)
 
-        if area > maxGreenArea and numberOfPoints >= 4 and numberOfPoints <= 6 and area > areaThreashold:
-            green_ymin, green_ymax, green_xmin, green_xmax = calculateMinMaxPoints(font, original_img_preview, original_img_previewHeight, original_img_previewWidth, approx)
-            if green_ymin > seekAreaBorderHorizontalY and green_xmin > seekAreaBorderHorizontalXStart and green_xmax < seekAreaBorderHorizontalXEnd:
+        if area > maxGreenArea and numberOfPoints >= 4 and numberOfPoints <= 6 and area > areaThreashold and areAllPointsInsideSeekBorderArea(approx, seekAreaBorderHorizontalY, seekAreaBorderHorizontalXStart, seekAreaBorderHorizontalXEnd):
+                green_ymin, green_ymax, green_xmin, green_xmax = calculateMinMaxPoints(font, original_img_preview, original_img_previewHeight, original_img_previewWidth, approx)
                 maxGreenArea = area
                 maxGreenAreaContour = scale_contour(cnt, 1.01)
                 maxGreenAreaContourApprox = scale_contour(approx, 1.01)
@@ -214,9 +229,8 @@ while True:
         approx = cv2.approxPolyDP(cnt, 0.02 * cv2.arcLength(cnt, True), True)
         numberOfPoints = len(approx)
         
-        if area > maxBlueArea and numberOfPoints >= 4 and numberOfPoints <= 6 and area > areaThreashold and area > 3 * maxGreenArea :
-            blue_ymin, blue_ymax, blue_xmin, blue_xmax = calculateMinMaxPoints(font, original_img_preview, original_img_previewHeight, original_img_previewWidth, approx) 
-            if blue_ymin > seekAreaBorderHorizontalY and blue_xmin > seekAreaBorderHorizontalXStart and blue_xmax < seekAreaBorderHorizontalXEnd:   
+        if area > maxBlueArea and numberOfPoints >= 4 and numberOfPoints <= 6 and area > areaThreashold and area > 3 * maxGreenArea and areAllPointsInsideSeekBorderArea(approx, seekAreaBorderHorizontalY, seekAreaBorderHorizontalXStart, seekAreaBorderHorizontalXEnd):
+                blue_ymin, blue_ymax, blue_xmin, blue_xmax = calculateMinMaxPoints(font, original_img_preview, original_img_previewHeight, original_img_previewWidth, approx) 
                 maxBlueArea = area
                 maxBlueAreaContour = scale_contour(cnt, 1.01)
                 maxBlueAreaContourApprox = scale_contour(approx, 1.01)

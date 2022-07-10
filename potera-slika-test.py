@@ -11,9 +11,8 @@ fileName = 'potjera-e1320-frame.jpg'
 
 writeDebugInfoOnImages = False
 percentageOfAreaThreshold = 0.0030
-resizeImagePercentage = 0.5
+resizeImagePercentage = 1
 font = cv2.FONT_HERSHEY_COMPLEX
-
 
 def nothing(x):
     # dummy
@@ -223,8 +222,8 @@ while True:
 if maxGreenArea > 0 and maxBlueArea > 0:
     questionRectangleImage = original_img_preview[blue_ymin:blue_ymax, blue_xmin:blue_xmax]
     answerRectangleImage = original_img_preview[green_ymin:green_ymax, green_xmin:green_xmax]
-    cv2.imwrite("results/question.jpg", questionRectangleImage) 
-    cv2.imwrite("results/answer.jpg", answerRectangleImage)
+    cv2.imwrite("results/%s-question.jpg" %fileName, questionRectangleImage) 
+    cv2.imwrite("results/%s-answer.jpg" %fileName, answerRectangleImage)
     print('Success!')
 else:
     print('Error: Question/Answer not found!')

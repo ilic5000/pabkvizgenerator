@@ -4,9 +4,9 @@ import numpy
 import sys
 import easyocr
 
-fileName = 'hrvatskalosakval.png'
+#fileName = 'hrvatskalosakval.png'
 #fileName = 'potera-srpska.png'
-#fileName = 'potera-srpska-2.png'
+fileName = 'potera-srpska-2.png'
 #fileName = 'potera-srpska-3.png'
 #fileName = 'prosta-slika-test.png'
 
@@ -17,8 +17,8 @@ resizeImagePercentage = 1
 font = cv2.FONT_HERSHEY_COMPLEX
 
 # Load model into the memory
-#reader = easyocr.Reader(['rs_cyrillic'], gpu=False)
-reader = easyocr.Reader(['rs_latin'], gpu=False)
+reader = easyocr.Reader(['rs_cyrillic'], gpu=False)
+#reader = easyocr.Reader(['rs_latin'], gpu=False)
 
 def nothing(x):
     # dummy
@@ -252,11 +252,11 @@ if maxGreenArea > 0 and maxBlueArea > 0:
     answerRectangleImage = original_img_preview[green_ymin:green_ymax, green_xmin:green_xmax]
 
     cv2.imwrite("results/%s-question.jpg" %fileName, questionRectangleImage)
-    ocrQuestionList = reader.readtext(questionRectangleImage, detail = 0)
+    ocrQuestionList = reader.readtext(questionRectangleImage, detail = 0, paragraph=True)
     ocrQuestion = listToString(ocrQuestionList)
 
     cv2.imwrite("results/%s-answer.jpg" %fileName, answerRectangleImage)
-    ocrAnswerList = reader.readtext(answerRectangleImage, detail = 0)
+    ocrAnswerList = reader.readtext(answerRectangleImage, detail = 0, paragraph=True)
     ocrAnswer = listToString(ocrAnswerList)
 
     print('Question: %s' %ocrQuestion)

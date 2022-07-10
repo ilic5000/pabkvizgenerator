@@ -2,6 +2,7 @@ from time import sleep
 import cv2
 import numpy
 import sys
+import easyocr
 
 fileName = 'potjera-e1320-frame.jpg'
 #fileName = 'potera-srpska.png'
@@ -12,11 +13,24 @@ fileName = 'potjera-e1320-frame.jpg'
 writeDebugInfoOnImages = False
 percentageOfAreaThreshold = 0.0030
 resizeImagePercentage = 1
+
 font = cv2.FONT_HERSHEY_COMPLEX
+
+# Load model into the memory
+#reader = easyocr.Reader(['rs_cyrillic'], gpu=False)
+reader = easyocr.Reader(['rs_latin'], gpu=False)
 
 def nothing(x):
     # dummy
     pass
+
+def listToString(s):
+   
+    # initialize an empty string
+    str1 = " "
+   
+    # return string 
+    return (str1.join(s))
 
 def scale_contour(cnt, scale):
     if scale == 1.0:
@@ -222,8 +236,17 @@ while True:
 if maxGreenArea > 0 and maxBlueArea > 0:
     questionRectangleImage = original_img_preview[blue_ymin:blue_ymax, blue_xmin:blue_xmax]
     answerRectangleImage = original_img_preview[green_ymin:green_ymax, green_xmin:green_xmax]
-    cv2.imwrite("results/%s-question.jpg" %fileName, questionRectangleImage) 
+
+    cv2.imwrite("results/%s-question.jpg" %fileName, questionRectangleImage)
+    ocrQuestionList = reader.readtext(questionRectangleImage, detail = 0)
+    ocrQuestion = listToString(ocrQuestionList)
+
     cv2.imwrite("results/%s-answer.jpg" %fileName, answerRectangleImage)
+    ocrAnswerList = reader.readtext(answerRectangleImage, detail = 0)
+    ocrAnswer = listToString(ocrAnswerList)
+
+    print('Question: %s' %ocrQuestion)
+    print('Answer: %s' %ocrAnswer)
     print('Success!')
 else:
     print('Error: Question/Answer not found!')

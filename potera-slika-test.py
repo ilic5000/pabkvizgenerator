@@ -3,18 +3,34 @@ import cv2
 import numpy
 import sys
 
-#fileName = 'potjera-e1320-frame.jpg'
+fileName = 'potjera-e1320-frame.jpg'
 #fileName = 'potera-srpska.png'
-fileName = 'potera-srpska-2.png'
+#fileName = 'potera-srpska-2.png'
+#fileName = 'potera-srpska-3.png'
 #fileName = 'prosta-slika-test.png'
 
-percentageOfAreaThreshold = 0.0025
+percentageOfAreaThreshold = 0.0030
 resizeImagePercentage = 0.5
 font = cv2.FONT_HERSHEY_COMPLEX
 
 def nothing(x):
     # dummy
     pass
+
+def scale_contour(cnt, scale):
+    if scale == 1.0:
+        return cnt
+
+    M = cv2.moments(cnt)
+    cx = int(M['m10']/M['m00'])
+    cy = int(M['m01']/M['m00'])
+
+    cnt_norm = cnt - [cx, cy]
+    cnt_scaled = cnt_norm * scale
+    cnt_scaled = cnt_scaled + [cx, cy]
+    cnt_scaled = cnt_scaled.astype(numpy.int32)
+
+    return cnt_scaled
 
 def calculateMinMaxPoints(font, original_img_preview, original_img_previewHeight, original_img_previewWidth, approx):
     #https://www.geeksforgeeks.org/find-co-ordinates-of-contours-using-opencv-python/
@@ -80,6 +96,19 @@ while True:
     original_img_preview = cv2.resize(image, (0, 0), fx=resizeImagePercentage, fy=resizeImagePercentage)
     original_img_previewHeight, original_img_previewWidth, channels = original_img_preview.shape 
 
+    seekAreaBorderHorizontalY = 2 * int(original_img_previewHeight/3)
+    seekAreaBorderHorizontalXStart = 0
+    seekAreaBorderHorizontalXEnd = original_img_previewWidth
+    cv2.line(original_img_preview, (seekAreaBorderHorizontalXStart, seekAreaBorderHorizontalY), (seekAreaBorderHorizontalXEnd, seekAreaBorderHorizontalY), (0, 255, 0), thickness=2)
+    
+    seekAreaBorderLeftX = int(original_img_previewWidth/9.1)
+    seekAreaBorderLeftY = original_img_previewHeight
+    cv2.line(original_img_preview, (seekAreaBorderLeftX, seekAreaBorderHorizontalY), (seekAreaBorderLeftX, seekAreaBorderLeftY), (0, 255, 0), thickness=2)
+
+    seekAreaBorderRightX = int(8.1 * int(original_img_previewWidth/9.1))
+    seekAreaBorderRightY = original_img_previewHeight
+    cv2.line(original_img_preview, (seekAreaBorderRightX, seekAreaBorderHorizontalY), (seekAreaBorderRightX, seekAreaBorderRightY), (0, 255, 0), thickness=2)
+
     green_l_h = cv2.getTrackbarPos("Lower-H", "HSVTrackbarsGreen")
     green_l_s = cv2.getTrackbarPos("Lower-S", "HSVTrackbarsGreen")
     green_l_v = cv2.getTrackbarPos("Lower-V", "HSVTrackbarsGreen")
@@ -135,54 +164,43 @@ while True:
     maxGreenArea = 0 
     maxGreenAreaContour = None
     maxGreenAreaContourApprox = None
+    green_ymin, green_ymax, green_xmin, green_xmax = None, None, None, None
 
     for cnt in contoursInGreenMask:
         area = cv2.contourArea(cnt)
         approx = cv2.approxPolyDP(cnt, 0.02 * cv2.arcLength(cnt, True), True)
         numberOfPoints = len(approx)
 
-        if area > maxGreenArea and numberOfPoints == 4 and area > areaThreashold:
-            maxGreenArea = area
-            maxGreenAreaContour = cnt
-            maxGreenAreaContourApprox = approx
-
-    green_ymin, green_ymax, green_xmin, green_xmax = None, None, None, None
+        if area > maxGreenArea and numberOfPoints >= 4 and numberOfPoints <= 6 and area > areaThreashold:
+            green_ymin, green_ymax, green_xmin, green_xmax = calculateMinMaxPoints(font, original_img_preview, original_img_previewHeight, original_img_previewWidth, approx)
+            if green_ymin > seekAreaBorderHorizontalY and green_xmin > seekAreaBorderHorizontalXStart and green_xmax < seekAreaBorderHorizontalXEnd:
+                maxGreenArea = area
+                maxGreenAreaContour = scale_contour(cnt, 1.01)
+                maxGreenAreaContourApprox = scale_contour(approx, 1.01)
+    
     if maxGreenArea > 0:
         cv2.drawContours(original_img_preview, [maxGreenAreaContourApprox], 0, (0, 255, 0), 2)
-
-        green_ymin, green_ymax, green_xmin, green_xmax = calculateMinMaxPoints(font, original_img_preview, original_img_previewHeight, original_img_previewWidth, maxGreenAreaContourApprox)
 
     maxBlueArea = 0 
     maxBlueAreaContour = None
     maxBlueAreaContourApprox = None
+    blue_ymin, blue_ymax, blue_xmin, blue_xmax = None, None, None, None
 
     for cnt in contoursInBlueMask:
         area = cv2.contourArea(cnt)
         approx = cv2.approxPolyDP(cnt, 0.02 * cv2.arcLength(cnt, True), True)
         numberOfPoints = len(approx)
+        
+        if area > maxBlueArea and numberOfPoints >= 4 and numberOfPoints <= 6 and area > areaThreashold and area > 3 * maxGreenArea :
+            blue_ymin, blue_ymax, blue_xmin, blue_xmax = calculateMinMaxPoints(font, original_img_preview, original_img_previewHeight, original_img_previewWidth, approx) 
+            if blue_ymin > seekAreaBorderHorizontalY and blue_xmin > seekAreaBorderHorizontalXStart and blue_xmax < seekAreaBorderHorizontalXEnd:   
+                maxBlueArea = area
+                maxBlueAreaContour = scale_contour(cnt, 1.01)
+                maxBlueAreaContourApprox = scale_contour(approx, 1.01)
 
-        if area > maxBlueArea and numberOfPoints == 4 and area > areaThreashold and area > 3 * maxGreenArea: 
-            maxBlueArea = area
-            maxBlueAreaContour = cnt
-            maxBlueAreaContourApprox = approx
-
-    blue_ymin, blue_ymax, blue_xmin, blue_xmax = None, None, None, None
     if maxBlueArea > 0:
             cv2.drawContours(original_img_preview, [maxBlueAreaContourApprox], 0, (255, 0, 0), 2)
-            blue_ymin, blue_ymax, blue_xmin, blue_xmax = calculateMinMaxPoints(font, original_img_preview, original_img_previewHeight, original_img_previewWidth, maxBlueAreaContourApprox)
-
-    lowerThirdYUpper = 2 * int(original_img_previewHeight/3)
-    line_thickness = 2
-    cv2.line(original_img_preview, (0, lowerThirdYUpper), (original_img_previewWidth, lowerThirdYUpper), (0, 255, 0), thickness=line_thickness)
-    
-    lowerEightXLower = int(original_img_previewWidth/9.1)
-    line_thickness = 2
-    cv2.line(original_img_preview, (lowerEightXLower, lowerThirdYUpper), (lowerEightXLower, original_img_previewHeight), (0, 255, 0), thickness=line_thickness)
-
-    lowerEightXUpper = int(8.1 * int(original_img_previewWidth/9.1))
-    line_thickness = 2
-    cv2.line(original_img_preview, (lowerEightXUpper, lowerThirdYUpper), (lowerEightXUpper, original_img_previewHeight), (0, 255, 0), thickness=line_thickness)
-
+            
     cv2.imshow('green mask', green_mask_half)
     cv2.imshow('blue mask', blue_mask_half)
     cv2.imshow('Original preview', original_img_preview)

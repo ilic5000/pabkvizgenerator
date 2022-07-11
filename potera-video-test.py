@@ -13,7 +13,7 @@ createDebugData = False
 
 fileName = 'potjera-e1320-isecena.mp4'
 
-# OCR language (eithr latin or cyrillic, cannot do both at the same time)
+# OCR language (either latin or cyrillic, cannot do both at the same time)
 ocrLanguage = 'rs_latin'
 #ocrLanguage = 'rs_cyrillic'
 

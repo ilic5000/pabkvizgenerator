@@ -4,21 +4,26 @@ import numpy
 import sys
 import easyocr
 
-fileName = 'potjera-e1320-isecena.mp4-124-answer.jpg'
-#fileName = 'potera-srpska.png'
+# Configuration ##################################################
+
+#fileName = 'Screenshot_1.png'
+fileName = 'potera-srpska.png'
 #fileName = 'potera-srpska-2.png'
 #fileName = 'potera-srpska-3.png'
 #fileName = 'prosta-slika-test.png'
 
-writeDebugInfoOnImages = True
+writeDebugInfoOnImages = False
+preprocessImageBeforeOCR = False
 percentageOfAreaThreshold = 0.0030
 resizeImagePercentage = 1
 
 font = cv2.FONT_HERSHEY_COMPLEX
 
-# Load model into the memory
-reader = easyocr.Reader(['rs_cyrillic'], gpu=False)
-#reader = easyocr.Reader(['rs_latin'], gpu=False)
+# OCR language (either latin or cyrillic, cannot do both at the same time)
+ocrLanguage = 'rs_latin'
+#ocrLanguage = 'rs_cyrillic'
+
+###############################################################################################
 
 def nothing(x):
     # dummy
@@ -91,6 +96,24 @@ def calculateMinMaxPoints(font, original_img_preview, original_img_previewHeight
                                         font, 0.5, (0, 0, 255)) 
         i = i + 1
     return ymin,ymax,xmin,xmax
+
+def preprocessBeforeOCR(imageToProcess, invertColors):
+    imageToProcess = cv2.cvtColor(imageToProcess, cv2.COLOR_BGR2GRAY)
+    if invertColors:
+        imageToProcess = cv2.bitwise_not(imageToProcess)
+    dilated_img = cv2.dilate(imageToProcess, numpy.ones((7, 7), numpy.uint8))
+    bg_img = cv2.medianBlur(dilated_img, 17)
+    diff_img = 255 - cv2.absdiff(imageToProcess, bg_img)
+    imageToProcess = cv2.normalize(diff_img, None, alpha=0, beta=255,
+                         norm_type=cv2.NORM_MINMAX, dtype=cv2.CV_8UC1)
+
+    imageToProcess = cv2.threshold(imageToProcess, 0, 255, cv2.THRESH_OTSU)[1]
+    return imageToProcess
+
+# Start processing...
+
+# Load model into the memory
+reader = easyocr.Reader([ocrLanguage], gpu=False)
 
 cv2.namedWindow("HSVTrackbarsGreen")
 cv2.createTrackbar("Lower-H", "HSVTrackbarsGreen", 31, 180, nothing)
@@ -245,6 +268,10 @@ while True:
 if maxGreenArea > 0 and maxBlueArea > 0:
     questionRectangleImage = original_img_preview[blue_ymin:blue_ymax, blue_xmin:blue_xmax]
     answerRectangleImage = original_img_preview[green_ymin:green_ymax, green_xmin:green_xmax]
+
+    if preprocessImageBeforeOCR:
+        questionRectangleImage = preprocessBeforeOCR(questionRectangleImage, invertColors=True)
+        answerRectangleImage = preprocessBeforeOCR(answerRectangleImage, invertColors=False)                    
 
     cv2.imwrite("results/%s-question.jpg" %fileName, questionRectangleImage)
     ocrQuestionList = reader.readtext(questionRectangleImage, detail = 0, paragraph=True)

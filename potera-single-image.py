@@ -6,11 +6,11 @@ import easyocr
 
 # Configuration ##################################################
 
-#fileName = 'Screenshot_1.png'
-fileName = 'potera-srpska.png'
-#fileName = 'potera-srpska-2.png'
-#fileName = 'potera-srpska-3.png'
-#fileName = 'prosta-slika-test.png'
+#fileName = 'examples/Screenshot_1.png'
+fileName = 'examples/potera-srpska.png'
+#fileName = 'examples/potera-srpska-2.png'
+#fileName = 'examples/potera-srpska-3.png'
+#fileName = 'examples/prosta-slika-test.png'
 
 writeDebugInfoOnImages = False
 preprocessImageBeforeOCR = False

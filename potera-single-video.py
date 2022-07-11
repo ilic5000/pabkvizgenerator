@@ -11,7 +11,7 @@ import os.path
 
 createDebugData = False
 
-fileName = 'potjera-e1320-isecena.mp4'
+fileName = 'examples/potjera-e1320-isecena-najkrace.mp4'
 
 # OCR language (either latin or cyrillic, cannot do both at the same time)
 ocrLanguage = 'rs_latin'

@@ -321,7 +321,7 @@ while success:
             ocrAnswerList = reader.readtext(answerRectangleImage, detail = 0, paragraph=True)
             ocrAnswer = listToString(ocrAnswerList)
 
-            print('Question: %s' %ocrQuestion)
+            print('\nQuestion: %s' %ocrQuestion)
             print('Answer: %s' %ocrAnswer)
             
             numberOfFoundQuestionAnswerPair += 1

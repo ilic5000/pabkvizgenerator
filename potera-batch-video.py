@@ -35,6 +35,8 @@ print("Files directory set to: %s" %directoryWithVideoFiles)
 print("Found %d files to be processed" %totalNumberOfFiles)
 print()
 
+start_time = datetime.now()
+
 for file in videoFiles:
     print()
     print("***********************************************************************************")
@@ -61,3 +63,6 @@ for file in videoFiles:
         
     i+=1
     print("***********************************************************************************")
+
+currentTime = 'Time: {}'.format(datetime.now() - start_time)
+print("Batch processing finished. Duration: %s" %currentTime)

@@ -29,7 +29,7 @@ fileName = config['fileName']
 filePath = "%s/%s" %(srcDir, config['fileName'])
 directoryOutput = config['output']
 csvFileName = config['csvFileName']
-createDebugData = config['debugData']
+createDebugData = (config['debugData'] == 'True')
 
 # OCR language (either latin or cyrillic, cannot do both at the same time)
 ocrLanguage = config['language']
@@ -66,7 +66,7 @@ blue_u_v = 210
 # When answer/question are found, jump frames in order to avoid multiple detection of the same question
 # This can be done smarter, but this simple jump works just fine
 howManyGreenFramesToJumpPrelod = 10
-howManyFramesToJump = 450
+howManyFramesToJumpAfterSuccess = 450
 
 # CSV config
 csvFileLocation = "%s/%s" %(directoryOutput, csvFileName)
@@ -87,6 +87,12 @@ def get_bitrate(file):
     video_bitrate = next(s for s in probe['streams'] if s['codec_type'] == 'video')
     bitrate = int(int(video_bitrate['bit_rate']) / 1000)
     return bitrate
+
+def get_fps(file):
+    probe = ffmpeg.probe(file)
+    video_info = next(s for s in probe['streams'] if s['codec_type'] == 'video')
+    fps = int(video_info['r_frame_rate'].split('/')[0])
+    return fps
 
 def listToString(s):
     str1 = " "
@@ -171,8 +177,8 @@ if not os.path.isfile(filePath):
     print('Skipping...')
     sys.exit(1)
 
-# Load EasyOCR trained models
-reader = easyocr.Reader([ocrLanguage], gpu=False)
+# Load EasyOCR trained models (en is fallback)
+reader = easyocr.Reader(['en', ocrLanguage], gpu=False)
 
 # Initialize csv if not exist
 if not os.path.isfile(csvFileLocation):
@@ -184,7 +190,6 @@ if not os.path.isfile(csvFileLocation):
 videoFile = cv2.VideoCapture(filePath)
 success,originalFrame = videoFile.read()
 videoFileFramesTotalLength = int(videoFile.get(cv2.CAP_PROP_FRAME_COUNT))
-frameIndex = 0
 
 # Create seek area (a lot easier to find shapes and avoid false detections on unimportant parts of the image)
 imageHeight, imageWidth, _ = originalFrame.shape 
@@ -207,6 +212,11 @@ skipFirstGreenFoundMaskFrames = True
 
 # Get video bitrate for debug purposes
 bitrate = get_bitrate(filePath)
+
+frameIndex = 0
+howManyFramesToIterateBy = 2 * get_fps(filePath)
+
+numberOfFoundQuestionAnswerPair = 0
 
 # Loop through all frames of the video
 while success:
@@ -278,6 +288,8 @@ while success:
             frameIndex += howManyGreenFramesToJumpPrelod
             videoFile.set(cv2.CAP_PROP_POS_FRAMES, frameIndex)
             skipFirstGreenFoundMaskFrames = False
+            success,originalFrame = videoFile.read()
+            continue
         else:
             blue_ymin = blue_ymin - blueMaskHeightExpansion
             blue_ymax = blue_ymax + blueMaskHeightExpansion
@@ -309,16 +321,18 @@ while success:
             ocrAnswerList = reader.readtext(answerRectangleImage, detail = 0, paragraph=True)
             ocrAnswer = listToString(ocrAnswerList)
 
-            print('\nQuestion: %s' %ocrQuestion)
+            print('Question: %s' %ocrQuestion)
             print('Answer: %s' %ocrAnswer)
             
+            numberOfFoundQuestionAnswerPair += 1
+
             with open(csvFileLocation, 'a+', encoding='UTF8', newline='') as f:
                 writer = csv.writer(f, delimiter =';')
                 csvDataRow = [ocrQuestion, ocrAnswer, bitrate, imageHeight, imageWidth, filePath, frameIndex]
                 writer.writerow(csvDataRow)
 
             # https://subscription.packtpub.com/book/application-development/9781788474443/1/ch01lvl1sec15/jumping-between-frames-in-video-files
-            frameIndex += howManyFramesToJump
+            frameIndex += howManyFramesToJumpAfterSuccess
             print("Jump to %dth frame of %d" %(frameIndex, videoFileFramesTotalLength))
             if frameIndex >= videoFileFramesTotalLength:
                 print("No more frames to process after frame jump...")
@@ -326,9 +340,12 @@ while success:
             skipFirstGreenFoundMaskFrames = True
 
     # Read new frame and continue with the loop
+    frameIndex += howManyFramesToIterateBy
+    videoFile.set(cv2.CAP_PROP_POS_FRAMES, frameIndex)
     success,originalFrame = videoFile.read()
-    frameIndex += 1
 
 end_time = datetime.now()
+
+print('\nFound: %d question/answer frames' %numberOfFoundQuestionAnswerPair)
 print('Duration: {}'.format(end_time - start_time))
 print("Finished processing of %s." %filePath)

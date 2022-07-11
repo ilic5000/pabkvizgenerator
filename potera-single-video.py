@@ -65,13 +65,17 @@ blue_u_v = 210
 
 # When answer/question are found, jump frames in order to avoid multiple detection of the same question
 # This can be done smarter, but this simple jump works just fine
-howManyGreenFramesToJumpPrelod = 10
-howManyFramesToJumpAfterSuccess = 450
+howManyGreenFramesToJumpPrelod = 5
+howManyFramesToJumpAfterSuccess = 350
+frameIterationStepModifier = 2
 
 # CSV config
-csvFileLocation = "%s/%s" %(directoryOutput, csvFileName)
+csvResultsFileLocation = "%s/%s" %(directoryOutput, csvFileName)
+csvLogFileLocation = "%s/log-%s" %(directoryOutput, csvFileName)
+
 csvDelimeter = ';'
-csvHeaders = ['question', 'answer', 'video_bitrate', 'resolution_height', 'resolution_width', 'filename', 'frameNumber']
+csvResultsHeaders = ['question', 'answer', 'video_bitrate', 'resolution_height', 'resolution_width', 'filename', 'frameNumber']
+csvLogHeaders = ['filename', 'found_questions_answers', 'fps', 'iteration_step', 'processing_duration']
 
 # End of configuration ##############################################################################
 
@@ -91,7 +95,9 @@ def get_bitrate(file):
 def get_fps(file):
     probe = ffmpeg.probe(file)
     video_info = next(s for s in probe['streams'] if s['codec_type'] == 'video')
-    fps = int(video_info['r_frame_rate'].split('/')[0])
+    fps_first_part = int(video_info['r_frame_rate'].split('/')[0])
+    fps_second_part = int(video_info['r_frame_rate'].split('/')[1])
+    fps = int(fps_first_part / fps_second_part)
     return fps
 
 def listToString(s):
@@ -181,10 +187,15 @@ if not os.path.isfile(filePath):
 reader = easyocr.Reader(['en', ocrLanguage], gpu=False)
 
 # Initialize csv if not exist
-if not os.path.isfile(csvFileLocation):
-    with open(csvFileLocation, 'a+', encoding='UTF8', newline='') as f:
+if not os.path.isfile(csvResultsFileLocation):
+    with open(csvResultsFileLocation, 'a+', encoding='UTF8', newline='') as f:
         writer = csv.writer(f, delimiter =';')
-        writer.writerow(csvHeaders)
+        writer.writerow(csvResultsHeaders)
+
+if not os.path.isfile(csvLogFileLocation):
+    with open(csvLogFileLocation, 'a+', encoding='UTF8', newline='') as f:
+        writer = csv.writer(f, delimiter =';')
+        writer.writerow(csvLogHeaders)
 
 # Load up video and obtain first frame
 videoFile = cv2.VideoCapture(filePath)
@@ -214,7 +225,11 @@ skipFirstGreenFoundMaskFrames = True
 bitrate = get_bitrate(filePath)
 
 frameIndex = 0
-howManyFramesToIterateBy = 2 * get_fps(filePath)
+videoAverageFps = get_fps(filePath)
+print("FPS: %d" %videoAverageFps)
+
+howManyFramesToIterateBy = int(frameIterationStepModifier * videoAverageFps)
+print("Frame iteration step: %d" %howManyFramesToIterateBy)
 
 numberOfFoundQuestionAnswerPair = 0
 
@@ -326,7 +341,7 @@ while success:
             
             numberOfFoundQuestionAnswerPair += 1
 
-            with open(csvFileLocation, 'a+', encoding='UTF8', newline='') as f:
+            with open(csvResultsFileLocation, 'a+', encoding='UTF8', newline='') as f:
                 writer = csv.writer(f, delimiter =';')
                 csvDataRow = [ocrQuestion, ocrAnswer, bitrate, imageHeight, imageWidth, filePath, frameIndex]
                 writer.writerow(csvDataRow)
@@ -347,5 +362,11 @@ while success:
 end_time = datetime.now()
 
 print('\nFound: %d question/answer frames' %numberOfFoundQuestionAnswerPair)
+duration = format(end_time - start_time)
 print('Duration: {}'.format(end_time - start_time))
+
 print("Finished processing of %s." %filePath)
+with open(csvLogFileLocation, 'a+', encoding='UTF8', newline='') as f:
+    writer = csv.writer(f, delimiter =';')
+    csvDataRow = [filePath, numberOfFoundQuestionAnswerPair, videoAverageFps, howManyFramesToIterateBy, duration]
+    writer.writerow(csvDataRow)

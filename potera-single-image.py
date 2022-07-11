@@ -7,8 +7,8 @@ import easyocr
 # Configuration ##################################################
 
 #fileName = 'examples/Screenshot_1.png'
-fileName = 'examples/potera-srpska.png'
-#fileName = 'examples/potera-srpska-2.png'
+#fileName = 'examples/potera-srpska.png'
+fileName = 'examples/potera-srpska-2.png'
 #fileName = 'examples/potera-srpska-3.png'
 #fileName = 'examples/prosta-slika-test.png'
 
@@ -20,8 +20,8 @@ resizeImagePercentage = 1
 font = cv2.FONT_HERSHEY_COMPLEX
 
 # OCR language (either latin or cyrillic, cannot do both at the same time)
-ocrLanguage = 'rs_latin'
-#ocrLanguage = 'rs_cyrillic'
+#ocrLanguage = 'rs_latin'
+ocrLanguage = 'rs_cyrillic'
 
 ###############################################################################################
 

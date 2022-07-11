@@ -6,16 +6,33 @@ import easyocr
 from datetime import datetime
 import csv
 import os.path
+import ffmpeg # https://github.com/deezer/spleeter/issues/101#issuecomment-554627345
+import argparse
+
+# Arguments
+parser = argparse.ArgumentParser(description="Potera single video processor",
+                                 formatter_class=argparse.ArgumentDefaultsHelpFormatter)
+
+parser.add_argument("-srcdir", "--srcDirectory", help="directory where file is located", default="examples")
+parser.add_argument("-file", "--fileName", help="video file name to be processed", default="potjera-e1320-isecena-najkrace.mp4")
+parser.add_argument("-o", "--output", help="directory for csv and debug data output", default="results")
+parser.add_argument("-lang", "--language", help="ocr language, can be either rs_latin or rs_cyrillic", default="rs_cyrillic")
+parser.add_argument("-csv", "--csvFileName", help="name for csv file", default="questions.csv")
+parser.add_argument("-d", "--debugData", help="create frame image files for every image processed. note: can use up a lot of data space!", default="True")
+args = parser.parse_args()
+config = vars(args)
 
 # Configuration ################################################################
 
-createDebugData = False
-
-fileName = 'examples/potjera-e1320-isecena-najkrace.mp4'
+srcDir = config['srcDirectory']
+fileName = config['fileName']
+filePath = "%s/%s" %(srcDir, config['fileName'])
+directoryOutput = config['output']
+csvFileName = config['csvFileName']
+createDebugData = config['debugData']
 
 # OCR language (either latin or cyrillic, cannot do both at the same time)
-ocrLanguage = 'rs_latin'
-#ocrLanguage = 'rs_cyrillic'
+ocrLanguage = config['language']
 
 # Found contours area size treshold 
 percentageOfAreaThreshold = 0.0035
@@ -52,18 +69,24 @@ howManyGreenFramesToJumpPrelod = 10
 howManyFramesToJump = 450
 
 # CSV config
-csvFileLocation = 'results/questions.csv'
+csvFileLocation = "%s/%s" %(directoryOutput, csvFileName)
 csvDelimeter = ';'
-csvHeaders = ['question', 'answer', 'filename', 'frameNumber']
+csvHeaders = ['question', 'answer', 'video_bitrate', 'resolution_height', 'resolution_width', 'filename', 'frameNumber']
 
 # End of configuration ##############################################################################
 
-def print_progress_bar(index, total, label):
+def print_progress_bar(index, total, label, endlabel):
     n_bar = 50  # Progress bar width
     progress = index / total
     sys.stdout.write('\r')
-    sys.stdout.write(f"[{'=' * int(n_bar * progress):{n_bar}s}] {int(100 * progress)}%  {label} ({index}/{total})")
+    sys.stdout.write(f"[{'=' * int(n_bar * progress):{n_bar}s}] {int(100 * progress)}%  {label} {index}/{total} {endlabel}")
     sys.stdout.flush()
+
+def get_bitrate(file):
+    probe = ffmpeg.probe(file)
+    video_bitrate = next(s for s in probe['streams'] if s['codec_type'] == 'video')
+    bitrate = int(int(video_bitrate['bit_rate']) / 1000)
+    return bitrate
 
 def listToString(s):
     str1 = " "
@@ -131,7 +154,22 @@ def calculateMinMaxPoints(imageHeight, imageWidth, contour):
 ############### Start of processing
 
 start_time = datetime.now()
-print("Started processing of %s..." %fileName)
+print("Single video file processing started of %s..." %filePath)
+
+if not os.path.isdir(srcDir):
+    print('Incorrect srcDirectory: \"%s\" Does directory exist?' %srcDir)
+    print('Skipping...')
+    sys.exit(1)
+
+if not os.path.isdir(directoryOutput):
+    print('Incorrect output directory: \"%s\" Does directory exist?' %directoryOutput)
+    print('Skipping...')
+    sys.exit(1)
+
+if not os.path.isfile(filePath):
+    print('File path is incorrect: \"%s\" Does file exist?' %filePath)
+    print('Skipping...')
+    sys.exit(1)
 
 # Load EasyOCR trained models
 reader = easyocr.Reader([ocrLanguage], gpu=False)
@@ -143,7 +181,7 @@ if not os.path.isfile(csvFileLocation):
         writer.writerow(csvHeaders)
 
 # Load up video and obtain first frame
-videoFile = cv2.VideoCapture(fileName)
+videoFile = cv2.VideoCapture(filePath)
 success,originalFrame = videoFile.read()
 videoFileFramesTotalLength = int(videoFile.get(cv2.CAP_PROP_FRAME_COUNT))
 frameIndex = 0
@@ -167,11 +205,14 @@ areaThreashold = percentageOfAreaThreshold * totalPixels
 
 skipFirstGreenFoundMaskFrames = True
 
+# Get video bitrate for debug purposes
+bitrate = get_bitrate(filePath)
+
 # Loop through all frames of the video
 while success:
-    
-    print_progress_bar(frameIndex, videoFileFramesTotalLength, "Frames processed " + fileName)
-    
+    currentTime = 'Time: {}'.format(datetime.now() - start_time)
+    print_progress_bar(frameIndex, videoFileFramesTotalLength, "Frames: ", currentTime)
+
     hsvFrameImage = cv2.cvtColor(originalFrame, cv2.COLOR_BGR2HSV)
     
     # Create HSV masks 
@@ -256,22 +297,24 @@ while success:
                 debugCopy = originalFrame.copy()
                 cv2.drawContours(debugCopy, [maxGreenAreaContourApprox], 0, (0, 255, 0), 3)
                 cv2.drawContours(debugCopy, [maxBlueAreaContourApprox], 0, (255, 0, 0), 3)
-                cv2.imwrite("results/%s-%d-1-frame-contours.jpg" % (fileName, frameIndex), debugCopy)
+                debugFrameName = "%s/%s-%d-1-frame-contours.jpg" % (directoryOutput, fileName, frameIndex)
+                cv2.imwrite(debugFrameName, debugCopy)
+                debugFrameName = "%s/%s-%d-2-question.jpg" % (directoryOutput, fileName, frameIndex)
+                cv2.imwrite(debugFrameName, questionRectangleImage)
+                debugFrameName = "%s/%s-%d-3-answer.jpg" % (directoryOutput, fileName, frameIndex)
+                cv2.imwrite(debugFrameName, answerRectangleImage)
 
-            cv2.imwrite("results/%s-%d-2-question.jpg" % (fileName, frameIndex), questionRectangleImage)
             ocrQuestionList = reader.readtext(questionRectangleImage, detail = 0, paragraph=True)
             ocrQuestion = listToString(ocrQuestionList)
-
-            cv2.imwrite("results/%s-%d-3-answer.jpg" % (fileName, frameIndex), answerRectangleImage)
             ocrAnswerList = reader.readtext(answerRectangleImage, detail = 0, paragraph=True)
             ocrAnswer = listToString(ocrAnswerList)
 
             print('\nQuestion: %s' %ocrQuestion)
             print('Answer: %s' %ocrAnswer)
-
+            
             with open(csvFileLocation, 'a+', encoding='UTF8', newline='') as f:
                 writer = csv.writer(f, delimiter =';')
-                csvDataRow = [ocrQuestion, ocrAnswer, fileName, frameIndex]
+                csvDataRow = [ocrQuestion, ocrAnswer, bitrate, imageHeight, imageWidth, filePath, frameIndex]
                 writer.writerow(csvDataRow)
 
             # https://subscription.packtpub.com/book/application-development/9781788474443/1/ch01lvl1sec15/jumping-between-frames-in-video-files
@@ -287,5 +330,5 @@ while success:
     frameIndex += 1
 
 end_time = datetime.now()
-print('\nDuration: {}'.format(end_time - start_time))
-print("Finished processing of %s." %fileName)
+print('Duration: {}'.format(end_time - start_time))
+print("Finished processing of %s." %filePath)

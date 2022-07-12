@@ -2,9 +2,7 @@ import sys
 import argparse
 import os
 import traceback
-import runpy #https://www.tutorialspoint.com/locating-and-executing-python-modules-runpy
 from datetime import datetime
-import subprocess
 
 parser = argparse.ArgumentParser(description="Pot(j)era videos batch processor",
                                  formatter_class=argparse.ArgumentDefaultsHelpFormatter)
@@ -43,19 +41,7 @@ for file in videoFiles:
     print("Batch processing \"%s\" file (%d of %d)" %(file, i, totalNumberOfFiles))
     # do something
     try:
-        # globals ={
-        #     "srcdir": directoryWithVideoFiles,
-        #     "file": file,
-        #     "o": directoryOutput,
-        #     "lang": language,
-        #     "csv": csvFileName,
-        #     "d": createDebugData
-        # }
-
-        #subprocess.Popen("python potera-single-video.py -srcdir \"%s\" -file \"%s\" -o \"%s\" -lang %s -csv \"%s\" -d %s" %(directoryWithVideoFiles, file, directoryOutput, language, csvFileName, createDebugData), shell=True)
         os.system("python potera-single-video.py -srcdir \"%s\" -file \"%s\" -o \"%s\" -lang \"%s\" -csv \"%s\" -d %s" %(directoryWithVideoFiles, file, directoryOutput, language, csvFileName, createDebugData))
-        # runpy.run_path("./potera-single-video.py -srcdir %s -file %s -o %s -lang %s -csv %s -d %s" %(directoryWithVideoFiles, file, directoryOutput, language, csvFileName, createDebugData))
-        # runpy.run_path("./potera-single-video.py")
     except Exception as e:
         print("Error occurred during execution at " + str(datetime.now().date()) + " {}".format(datetime.now().time()))
         print(traceback.format_exc())

@@ -67,7 +67,7 @@ blue_u_v = 210
 # This can be done smarter, but this simple jump works just fine
 howManyGreenFramesToJumpPrelod = 5
 howManyFramesToJumpAfterSuccess = 350
-frameIterationStepModifier = 2
+frameIterationStepModifier = 1
 
 # CSV config
 csvResultsFileLocation = "%s/%s" %(directoryOutput, csvFileName)

@@ -7,12 +7,12 @@ import easyocr
 # Configuration ##################################################
 
 #fileName = 'examples/Screenshot_1.png'
-#fileName = 'examples/potera-srpska.png'
-fileName = 'examples/potera-srpska-2.png'
+fileName = 'examples/potera-srpska.png'
+#fileName = 'examples/Screenshot_6.png'
 #fileName = 'examples/potera-srpska-3.png'
 #fileName = 'examples/prosta-slika-test.png'
 
-writeDebugInfoOnImages = False
+writeDebugInfoOnImages = True
 preprocessImageBeforeOCR = False
 percentageOfAreaThreshold = 0.0030
 resizeImagePercentage = 1
@@ -227,7 +227,7 @@ while True:
         approx = cv2.approxPolyDP(cnt, 0.02 * cv2.arcLength(cnt, True), True)
         numberOfPoints = len(approx)
 
-        if area > maxGreenArea and numberOfPoints >= 4 and numberOfPoints <= 6 and area > areaThreashold and areAllPointsInsideSeekBorderArea(approx, seekAreaBorderHorizontalLineY, seekAreaBorderHorizontalLineXStart, seekAreaBorderHorizontalLineXEnd):
+        if area > maxGreenArea and numberOfPoints >= 4 and numberOfPoints <= 6 and area > areaThreashold and areAllPointsInsideSeekBorderArea(approx, seekAreaBorderHorizontalLineY, seekAreaBorderLeftX, seekAreaBorderRightX):
                 green_ymin, green_ymax, green_xmin, green_xmax = calculateMinMaxPoints(font, original_img_preview, original_img_previewHeight, original_img_previewWidth, approx)
                 maxGreenArea = area
                 maxGreenAreaContour = scale_contour(cnt, 1.01)
@@ -247,7 +247,7 @@ while True:
         approx = cv2.approxPolyDP(cnt, 0.02 * cv2.arcLength(cnt, True), True)
         numberOfPoints = len(approx)
         
-        if area > maxBlueArea and numberOfPoints >= 4 and numberOfPoints <= 6 and area > areaThreashold and area > 3 * maxGreenArea and areAllPointsInsideSeekBorderArea(approx, seekAreaBorderHorizontalLineY, seekAreaBorderHorizontalLineXStart, seekAreaBorderHorizontalLineXEnd):
+        if area > maxBlueArea and numberOfPoints >= 4 and numberOfPoints <= 6 and area > areaThreashold and area > 3 * maxGreenArea and areAllPointsInsideSeekBorderArea(approx, seekAreaBorderHorizontalLineY, seekAreaBorderLeftX, seekAreaBorderRightX):
                 blue_ymin, blue_ymax, blue_xmin, blue_xmax = calculateMinMaxPoints(font, original_img_preview, original_img_previewHeight, original_img_previewWidth, approx) 
                 maxBlueArea = area
                 maxBlueAreaContour = scale_contour(cnt, 1.01)

@@ -1,3 +1,4 @@
+from operator import truediv
 from time import sleep
 import cv2
 import numpy
@@ -14,7 +15,7 @@ parser = argparse.ArgumentParser(description="Slagalica single video processor",
                                  formatter_class=argparse.ArgumentDefaultsHelpFormatter)
 
 parser.add_argument("-srcdir", "--srcDirectory", help="directory where file is located", default="examples")
-parser.add_argument("-file", "--fileName", help="video file name to be processed", default="slagalica_nova_isecena.mp4")
+parser.add_argument("-file", "--fileName", help="video file name to be processed", default="Slagalica 01.01.2020. (1080p_25fps_H264-128kbit_AAC).mp4")
 parser.add_argument("-o", "--output", help="directory for csv and debug data output", default="results")
 parser.add_argument("-lang", "--language", help="ocr language, can be either rs_latin or rs_cyrillic", default="rs_cyrillic")
 parser.add_argument("-csv", "--csvFileName", help="name for csv file", default="questions.csv")
@@ -163,6 +164,34 @@ def calculateMinMaxPoints(imageHeight, imageWidth, contour):
         i = i + 1
     return ymin,ymax,xmin,xmax
 
+def process_img_demo_purposes(img_rgb, template, count):
+    img_gray = cv2.cvtColor(img_rgb, cv2.COLOR_BGR2GRAY)
+
+    templateWidth, templateHeight = template.shape[::-1]
+                                                                                                                                                                       
+    res = cv2.matchTemplate(img_gray,template,cv2.TM_CCOEFF_NORMED)
+    min_val, max_val, min_loc, max_loc = cv2.minMaxLoc(res)
+    cv2.putText(img_rgb, "%s" % max_val, (100,100), cv2.FONT_HERSHEY_COMPLEX, 0.5, (0, 0, 255))
+    cv2.rectangle(img_rgb, max_loc,  (max_loc[0]+templateWidth , max_loc[1] + templateHeight), (0,255,255), 2)
+
+    cv2.imshow('original', img_rgb)
+    key = cv2.waitKey(1)
+
+    if max_val > 0.5:
+        cv2.waitKey()
+    #cv2.waitKey()
+    #cv2.destroyAllWindows()
+
+def does_template_exist(sourceImage, templateToFind, confidenceLevel):
+    img_gray = cv2.cvtColor(sourceImage, cv2.COLOR_BGR2GRAY)                                                                                                                
+    res = cv2.matchTemplate(img_gray, templateToFind, cv2.TM_CCOEFF_NORMED)
+    min_val, max_val, min_loc, max_loc = cv2.minMaxLoc(res)
+    if max_val >= confidenceLevel:
+        return True
+    return False
+
+
+
 ############### Start of processing
 
 start_time = datetime.now()
@@ -199,8 +228,10 @@ if not os.path.isfile(csvLogFileLocation):
 
 # Load up video and obtain first frame
 videoFile = cv2.VideoCapture(filePath)
-success,originalFrame = videoFile.read()
 videoFileFramesTotalLength = int(videoFile.get(cv2.CAP_PROP_FRAME_COUNT))
+frameIndex = int(videoFileFramesTotalLength/2)
+videoFile.set(cv2.CAP_PROP_POS_FRAMES, frameIndex)
+success,originalFrame = videoFile.read()
 
 # Create seek area (a lot easier to find shapes and avoid false detections on unimportant parts of the image)
 imageHeight, imageWidth, _ = originalFrame.shape 
@@ -224,7 +255,6 @@ skipFirstGreenFoundMaskFrames = True
 # Get video bitrate for debug purposes
 bitrate = get_bitrate(filePath)
 
-frameIndex = 0
 videoAverageFps = get_fps(filePath)
 print("FPS: %d" %videoAverageFps)
 
@@ -232,17 +262,57 @@ howManyFramesToIterateBy = int(frameIterationStepModifier * videoAverageFps)
 print("Frame iteration step: %d" %howManyFramesToIterateBy)
 
 numberOfFoundQuestionAnswerPair = 0
+templateToFindGameIntro = cv2.imread('examples/slagalica-nova-pocetak-template.png', 0)
+gameFound = False
+templateToFindNextGameIntro = cv2.imread('examples/slagalica-nova-asoc-template.png', 0)
+
+writeDebugInfoOnImages = True
 
 # Loop through all frames of the video
 while success:
-    currentTime = 'Time: {}'.format(datetime.now() - start_time)
+    currentTime = 'Duration: {}'.format(datetime.now() - start_time)
     print_progress_bar(frameIndex, videoFileFramesTotalLength, "Frames: ", currentTime)
 
-    
+    if writeDebugInfoOnImages:
+        cv2.line(originalFrame, (seekAreaBorderHorizontalLineXStart, seekAreaBorderHorizontalLineY), (seekAreaBorderHorizontalLineXEnd, seekAreaBorderHorizontalLineY), (0, 255, 0), thickness=2)
 
-    #frameIndex += howManyFramesToIterateBy
-    #videoFile.set(cv2.CAP_PROP_POS_FRAMES, frameIndex)
-    frameIndex += 1
+        cv2.line(originalFrame, (seekAreaBorderLeftX, seekAreaBorderHorizontalLineY), (seekAreaBorderLeftX, seekAreaBorderLeftY), (0, 255, 0), thickness=2)
+        cv2.line(originalFrame, (seekAreaBorderRightX, seekAreaBorderHorizontalLineY), (seekAreaBorderRightX, seekAreaBorderRightY), (0, 255, 0), thickness=2)
+
+        
+    if not gameFound:
+        if(does_template_exist(originalFrame, templateToFindGameIntro, confidenceLevel = 0.5)):
+            # Game found
+            print("Game start. Frame: %d" %frameIndex)
+            cv2.imshow('main window', originalFrame)
+            gameFound = True
+            cv2.waitKey()
+
+    if gameFound:
+
+
+
+
+
+
+
+
+        # FIND END
+
+        # add number of found questions as first condition
+        if(numberOfFoundQuestionAnswerPair == 10 or does_template_exist(originalFrame, templateToFindNextGameIntro, confidenceLevel = 0.6)):
+            # Game finished
+            print("Game end. Frame: %d" %frameIndex)
+            cv2.imshow('main window', originalFrame)
+            cv2.waitKey()
+
+            break
+
+
+    #process_img_demo_purposes(originalFrame, templateToFind, frameIndex)
+    frameIndex += howManyFramesToIterateBy
+    videoFile.set(cv2.CAP_PROP_POS_FRAMES, frameIndex)
+    #frameIndex += 1
     success,originalFrame = videoFile.read()
 
 end_time = datetime.now()

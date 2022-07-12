@@ -7,7 +7,7 @@ import easyocr
 # Configuration ##################################################
 
 #fileName = 'examples/Screenshot_1.png'
-fileName = 'examples/potera-srpska.png'
+fileName = 'examples/slagalica-nova-pitanje-odgovor.png'
 #fileName = 'examples/Screenshot_6.png'
 #fileName = 'examples/potera-srpska-3.png'
 #fileName = 'examples/prosta-slika-test.png'
@@ -15,7 +15,7 @@ fileName = 'examples/potera-srpska.png'
 writeDebugInfoOnImages = True
 preprocessImageBeforeOCR = False
 percentageOfAreaThreshold = 0.0030
-resizeImagePercentage = 1
+resizeImagePercentage = 0.5
 
 font = cv2.FONT_HERSHEY_COMPLEX
 

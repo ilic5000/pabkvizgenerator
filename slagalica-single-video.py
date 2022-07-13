@@ -162,6 +162,30 @@ def isTextPresentInBothImages(reader, questionRectangleImage, answerRectangleIma
 
     return False
 
+def preprocessBeforeOCRTest(imageToProcess, invertColors):
+    hsv = cv2.cvtColor(imageToProcess, cv2.COLOR_RGB2HSV)
+    # Define range of white color in HSV
+    lower_white = numpy.array([0, 0, 184])
+    upper_white = numpy.array([178, 239, 255])
+    # Threshold the HSV image
+    mask = cv2.inRange(hsv, lower_white, upper_white)
+
+    # Remove noise
+    kernel_erode = numpy.ones((2,2), numpy.uint8)
+    eroded_mask = cv2.erode(mask, kernel_erode, iterations=2)
+    kernel_dilate = numpy.ones((3,3),numpy.uint8)
+    dilated_mask = cv2.dilate(mask, kernel_dilate, iterations=1)
+    
+    # blur threshold image
+    blur = cv2.medianBlur(mask, 3)
+
+    cv2.imshow('preprocessBeforeOCRTest', mask)
+    key = cv2.waitKey()
+    cv2.imshow('preprocessBeforeOCRTest', blur)
+    key = cv2.waitKey()
+
+    return blur
+
 ############### Start of processing
 
 start_time = datetime.now()
@@ -290,6 +314,10 @@ while success:
                 cv2.imwrite(debugFrameName, questionRectangleImage)
                 debugFrameName = "%s/%s-%d-3-answer.jpg" % (directoryOutput, fileName, frameIndex)
                 cv2.imwrite(debugFrameName, answerRectangleImage)
+
+            if preprocessImageBeforeOCR:
+                questionRectangleImage = preprocessBeforeOCR(questionRectangleImage, invertColors=True)
+                answerRectangleImage = preprocessBeforeOCR(answerRectangleImage, invertColors=False)   
 
             ocrQuestionList = reader.readtext(questionRectangleImage, detail = 0, paragraph=True)
             ocrQuestion = listToString(ocrQuestionList)

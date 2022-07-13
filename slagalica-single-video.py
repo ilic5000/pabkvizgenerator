@@ -16,12 +16,11 @@ pytesseract.pytesseract.tesseract_cmd = r'C:\Program Files\Tesseract-OCR\tessera
 templateToFindGameIntro = cv2.imread('examples/slagalica/slagalica-nova-ko-zna-zna-template.png', 0)
 templateToFindNextGameIntro = cv2.imread('examples/slagalica/slagalica-nova-asoc-template.png', 0)
 
-diffSimilarirtyAnswerLowerValue = 0.1
-diffSimilarirtyAnswerUpperValue = 0.7
+diffSimilarirtyAnswerUpperValue = 0.2
 
 # When answer/question are found, jump frames in order to avoid multiple detection of the same question
 # This can be done smarter, but this simple jump works just fine
-howManyFramesToJumpAfterSuccess = 25
+howManyFramesToJumpAfterSuccess = 0
 frameIterationStepModifier = 1
 
 # Arguments
@@ -120,7 +119,7 @@ def process_img_demo_purposes(img_rgb, template, count):
     #cv2.waitKey()
     #cv2.destroyAllWindows()
 
-def does_template_exist(sourceImage, templateToFind, confidenceLevel):
+def match_image_template(sourceImage, templateToFind, confidenceLevel):
     img_gray = cv2.cvtColor(sourceImage, cv2.COLOR_BGR2GRAY)                                                                                                                
     res = cv2.matchTemplate(img_gray, templateToFind, cv2.TM_CCOEFF_NORMED)
     min_val, max_val, min_loc, max_loc = cv2.minMaxLoc(res)
@@ -133,6 +132,12 @@ def compare_two_images(sourceImage, templateToFind):
     res = cv2.matchTemplate(sourceImage, templateToFind, cv2.TM_CCOEFF_NORMED)
     min_val, max_val, min_loc, max_loc = cv2.minMaxLoc(res)
     return max_val
+
+def compare_two_images_number_of_pixels(sourceImage, templateToFind):
+    number_of_white_pix_img1 = numpy.sum(sourceImage > 240)
+    number_of_white_pix_img2 = numpy.sum(templateToFind > 240)
+    difference = abs(number_of_white_pix_img1 - number_of_white_pix_img2)
+    return difference
 
 def isQuestionsFrameVisible(percentageOfAreaThreshold, blue_l_h, blue_l_s, blue_l_v, blue_u_h, blue_u_s, blue_u_v, image):
     hsvImage = cv2.cvtColor(image, cv2.COLOR_BGR2HSV).copy()
@@ -154,7 +159,7 @@ def isQuestionsFrameVisible(percentageOfAreaThreshold, blue_l_h, blue_l_s, blue_
         approx = cv2.approxPolyDP(cnt, 0.03 * cv2.arcLength(cnt, True), True)
         numberOfPoints = len(approx)
             
-        if area > maxBlueArea and numberOfPoints >= 4 and numberOfPoints <= 8 and area > areaThreashold:
+        if area > maxBlueArea and numberOfPoints >= 3 and area > areaThreashold:
                 maxBlueArea = area
 
     if maxBlueArea > 0:
@@ -202,6 +207,7 @@ def pytesseractOCR(image, handleIncorrectQuestionMarkAtTheEnd):
     recognizedText = recognizedText.replace('|','')
     recognizedText = recognizedText.replace('\n',' ')
     recognizedText.replace("  ", " ")
+    recognizedText = recognizedText.strip('_')
     recognizedText = recognizedText.strip()
     recognizedText = " ".join(recognizedText.split())
     recognizedText = recognizedText.upper()
@@ -287,7 +293,7 @@ numberOfFoundQuestionAnswerPair = 0
 
 gameFound = False
 questionWithAnswerFrameFound = False
-answerRectangleTemp = None
+answerTemp = None
 answerRectangleDiffCounter = 0
 
 # Loop through all frames of the video
@@ -303,7 +309,7 @@ while success:
     print_progress_bar(frameIndex, videoFileFramesTotalLength, "Frames: ", currentTime)
 
     # MAGIC!
-    if not gameFound and does_template_exist(originalFrame, templateToFindGameIntro, confidenceLevel = 0.5):
+    if not gameFound and match_image_template(originalFrame, templateToFindGameIntro, confidenceLevel = 0.5):
         gameFound = True
         print("\nGame start found. Frame: %d" %frameIndex)
         gameFoundFrame = originalFrame.copy()
@@ -317,34 +323,49 @@ while success:
 
         questionFrameVisible = isQuestionsFrameVisible(percentageOfAreaThreshold, blue_l_h, blue_l_s, blue_l_v, blue_u_h, blue_u_s, blue_u_v, questionRectangleImage)
 
+        answerCurrentPreProccessed = preprocessBeforeOCR(answerRectangleImage.copy(), lower_bound=241, upper_bound=255, 
+                                                        type=cv2.THRESH_BINARY, useGaussianBlurBefore=True, useBlurAfter=True).copy()
+
+        questionWithAnswerFrameFound = False
+
         if questionFrameVisible: 
-            if answerRectangleTemp is not None:
-                diffSimilarityValue = compare_two_images(answerRectangleImage, answerRectangleTemp)
-                if diffSimilarityValue > diffSimilarirtyAnswerLowerValue and diffSimilarityValue < diffSimilarirtyAnswerUpperValue:
+            if answerTemp is not None:
+                cv2.imshow('t1:', answerTemp.copy())
+                cv2.imshow('t2:', answerCurrentPreProccessed.copy())
+                key = cv2.waitKey(1)
+
+                #diffSimilarityValue = compare_two_images(answerRectangleTemp, answerPreProccessed)
+                diffSimilarityValueNumberOfPixels = compare_two_images_number_of_pixels(answerTemp, answerCurrentPreProccessed)
+
+                if diffSimilarityValueNumberOfPixels > 500:
                     answerRectangleImage_preview = cv2.resize(answerRectangleImage, (0, 0), fx=0.2, fy=0.2)
                     cv2.imshow('Change detected found:', answerRectangleImage_preview)
                     key = cv2.waitKey(1)
-                    print("\ndiffSimilarityValue: {:.2f}".format(diffSimilarityValue))
-                    print("answerRectangleDiffCounter: %d" %(answerRectangleDiffCounter))
-                    answerRectangleDiffCounter += 1
-            answerRectangleTemp = answerRectangleImage.copy()
 
-        questionWithAnswerFrameFound = (answerRectangleDiffCounter % 2 == 1)
+                    #cv2.imshow('t1:', answerRectangleTemp)
+                    #cv2.imshow('t2:', answerPreProccessed)
+                    key = cv2.waitKey(1)
+
+                    #print("\ndiffSimilarityValue: {:.2f}".format(diffSimilarityValue))
+                    answerRectangleDiffCounter += 1
+                    questionWithAnswerFrameFound = (answerRectangleDiffCounter % 2 == 1)
+                    print("\nanswerRectangleDiffCounter: %d" %(answerRectangleDiffCounter))
+            answerTemp = answerCurrentPreProccessed.copy()
 
         if questionWithAnswerFrameFound:
             if createDebugData:
-                cv2.imwrite("results/%s-%d-0-frame.jpg" % (fileName, frameIndex), originalFrame)
+                cv2.imwrite("%s/%s-q%d-%d-0-frame-original.jpg" % (directoryOutput, fileName, numberOfFoundQuestionAnswerPair+1, frameIndex), originalFrame)
                 debugCopy = originalFrame.copy()
                 cv2.line(debugCopy, (seekAreaBorderLeftX, seekAreaQuestionBorderUpperLineY), (seekAreaBorderRightX, seekAreaQuestionBorderUpperLineY), (0, 255, 0), thickness=1)
                 cv2.line(debugCopy, (seekAreaBorderLeftX, seekAreaQuestionBorderLowerLineY), (seekAreaBorderRightX, seekAreaQuestionBorderLowerLineY), (0, 255, 255), thickness=2)
                 cv2.line(debugCopy, (seekAreaBorderLeftX, seekAreaAnswerBorderLowerLineY), (seekAreaBorderRightX, seekAreaAnswerBorderLowerLineY), (0, 255, 0), thickness=1)
                 cv2.line(debugCopy, (seekAreaBorderLeftX, seekAreaQuestionBorderUpperLineY), (seekAreaBorderLeftX, seekAreaBorderLeftY), (0, 255, 0), thickness=1)
                 cv2.line(debugCopy, (seekAreaBorderRightX, seekAreaQuestionBorderUpperLineY), (seekAreaBorderRightX, seekAreaBorderRightY), (0, 255, 0), thickness=1)
-                debugFrameName = "%s/%s-%d-1-frame-contours.jpg" % (directoryOutput, fileName, frameIndex)
+                debugFrameName = "%s/%s-q%d-%d-1-frame-contours.jpg" % (directoryOutput, fileName, numberOfFoundQuestionAnswerPair+1, frameIndex)
                 cv2.imwrite(debugFrameName, debugCopy)
-                debugFrameName = "%s/%s-%d-2.1-question.jpg" % (directoryOutput, fileName, frameIndex)
+                debugFrameName = "%s/%s-q%d-%d-2.1-question.jpg" % (directoryOutput, fileName, numberOfFoundQuestionAnswerPair+1, frameIndex)
                 cv2.imwrite(debugFrameName, questionRectangleImage)
-                debugFrameName = "%s/%s-%d-3.1-answer.jpg" % (directoryOutput, fileName, frameIndex)
+                debugFrameName = "%s/%s-q%d-%d-3.1-answer.jpg" % (directoryOutput, fileName, numberOfFoundQuestionAnswerPair+1, frameIndex)
                 cv2.imwrite(debugFrameName, answerRectangleImage)
 
             if preprocessImageBeforeOCR:
@@ -353,11 +374,11 @@ while success:
                 
                 questionRectangleImage = preprocessBeforeOCR(questionRectangleImage.copy(), lower_bound=241, upper_bound=255, 
                                                                 type=cv2.THRESH_BINARY + cv2.THRESH_OTSU, useGaussianBlurBefore=True, useBlurAfter=True)
-                debugFrameName = "%s/%s-%d-2.2-question.jpg" % (directoryOutput, fileName, frameIndex)
+                debugFrameName = "%s/%s-q%d-%d-2.2-question.jpg" % (directoryOutput, fileName, numberOfFoundQuestionAnswerPair+1, frameIndex)
                 cv2.imwrite(debugFrameName, questionRectangleImage)
                 answerRectangleImage = preprocessBeforeOCR(answerRectangleImage.copy(), lower_bound=241, upper_bound=255, 
                                                                 type=cv2.THRESH_BINARY, useGaussianBlurBefore=True, useBlurAfter=True)
-                debugFrameName = "%s/%s-%d-3.2-answer.jpg" % (directoryOutput, fileName, frameIndex)
+                debugFrameName = "%s/%s-q%d-%d-3.2-answer.jpg" % (directoryOutput, fileName, numberOfFoundQuestionAnswerPair+1, frameIndex)
                 cv2.imwrite(debugFrameName, answerRectangleImage)   
 
             if forceUseOfEasyOCR:
@@ -377,16 +398,17 @@ while success:
                 csvDataRow = [ocrQuestion, ocrAnswer, bitrate, imageHeight, imageWidth, filePath, frameIndex]
                 writer.writerow(csvDataRow)
 
-            frameIndex += howManyFramesToJumpAfterSuccess
-            print("\nJumping to %dth frame of %d after found question/answer..." %(frameIndex, videoFileFramesTotalLength))
-            if frameIndex >= videoFileFramesTotalLength:
-                print("No more frames to process after frame jump...")
+            if howManyFramesToJumpAfterSuccess > 0:
+                frameIndex += howManyFramesToJumpAfterSuccess
+                print("\nJumping to %dth frame of %d after found question/answer..." %(frameIndex, videoFileFramesTotalLength))
+                if frameIndex >= videoFileFramesTotalLength:
+                    print("No more frames to process after frame jump...")
 
         # TRY TO FIND END OF THE GAME
         if(numberOfFoundQuestionAnswerPair == 10):
             print("\nGame end found. 10 Questions reached. Frame: %d" %frameIndex)
             break
-        if(does_template_exist(originalFrame, templateToFindNextGameIntro, confidenceLevel = 0.6)):
+        if(match_image_template(originalFrame, templateToFindNextGameIntro, confidenceLevel = 0.6)):
             
             print("\nQuestions missed: %d" %(10-numberOfFoundQuestionAnswerPair))
             print("Game end found. New game intro recognized. Frame: %d" %frameIndex)

@@ -10,7 +10,8 @@ pytesseract.pytesseract.tesseract_cmd = r'C:\Program Files\Tesseract-OCR\tessera
 # Configuration ##################################################
 
 fileDir = 'examples'
-fileName = 'Slagalica 01.01.2020. (1080p_25fps_H264-128kbit_AAC).mp4-23267-0-frame.jpg'
+fileName = 'Screenshot_2.png'
+#fileName = 'Slagalica 01.01.2020. (1080p_25fps_H264-128kbit_AAC).mp4-23267-0-frame.jpg'
 filePath = "%s/%s"%(fileDir,fileName)
 
 writeDebugInfoOnImages = True
@@ -258,11 +259,11 @@ while True:
                 maxBlueAreaContour = scale_contour(cnt, 1.01)
                 maxBlueAreaContourApprox = scale_contour(approx, 1.01)
 
-    #if maxBlueArea > 0:
-        # Contour found
-            #if writeDebugInfoOnImagesMaskContours:
-                #print(maxBlueArea)
-                #cv2.drawContours(questionRectangleImage, [maxBlueAreaContourApprox], 0, (255, 0, 0), 2)
+    if maxBlueArea > 0:
+        #Contour found
+            if writeDebugInfoOnImagesMaskContours:
+                print(maxBlueArea)
+                cv2.drawContours(questionRectangleImage, [maxBlueAreaContourApprox], 0, (255, 0, 0), 2)
 
     cv2.imshow("question", questionRectangleImage)
     cv2.imshow("answer", answerRectangleImage)            

@@ -10,6 +10,13 @@ import os.path
 import ffmpeg # https://github.com/deezer/spleeter/issues/101#issuecomment-554627345
 import argparse
 
+# Hardcoded values
+templateToFindGameIntro = cv2.imread('examples/slagalica/slagalica-nova-ko-zna-zna-template.png', 0)
+templateToFindNextGameIntro = cv2.imread('examples/slagalica/slagalica-nova-asoc-template.png', 0)
+
+diffSimilarirtyAnswerLowerValue = 0.1
+diffSimilarirtyAnswerUpperValue = 0.7
+
 # Arguments
 parser = argparse.ArgumentParser(description="Slagalica single video processor",
                                  formatter_class=argparse.ArgumentDefaultsHelpFormatter)
@@ -20,6 +27,7 @@ parser.add_argument("-o", "--output", help="directory for csv and debug data out
 parser.add_argument("-lang", "--language", help="ocr language, can be either rs_latin or rs_cyrillic", default="rs_cyrillic")
 parser.add_argument("-csv", "--csvFileName", help="name for csv file", default="questions.csv")
 parser.add_argument("-d", "--debugData", help="create frame image files for every image processed. note: can use up a lot of data space!", default="True")
+parser.add_argument("-poi", "--preprocessOCRImages", help="apply processing (blur, threshold, etc.) before doing ocr to images", default="True")
 args = parser.parse_args()
 config = vars(args)
 
@@ -31,13 +39,7 @@ filePath = "%s/%s" %(srcDir, config['fileName'])
 directoryOutput = config['output']
 csvFileName = config['csvFileName']
 createDebugData = (config['debugData'] == 'True')
-
-templateToFindGameIntro = cv2.imread('examples/slagalica-nova-pocetak-template.png', 0)
-templateToFindNextGameIntro = cv2.imread('examples/slagalica-nova-asoc-template.png', 0)
-writeDebugInfoOnImages = True
-
-diffSimilarirtyAnswerLowerValue = 0.1
-diffSimilarirtyAnswerUpperValue = 0.7
+preprocessImageBeforeOCR = (config['preprocessOCRImages'] == 'True')
 
 # OCR language (either latin or cyrillic, cannot do both at the same time)
 ocrLanguage = config['language']
@@ -46,17 +48,17 @@ ocrLanguage = config['language']
 percentageOfAreaThreshold = 0.6
 
 # HSV masks values
-blue_l_h = 5
-blue_l_s = 0
-blue_l_v = 0
-blue_u_h = 152
-blue_u_s = 75
-blue_u_v = 119
+blue_l_h = 100
+blue_l_s = 118
+blue_l_v = 42
+blue_u_h = 120
+blue_u_s = 255
+blue_u_v = 210
 
 # When answer/question are found, jump frames in order to avoid multiple detection of the same question
 # This can be done smarter, but this simple jump works just fine
-howManyFramesToJumpAfterSuccess = 25
-frameIterationStepModifier = 1
+howManyFramesToJumpAfterSuccess = 1
+frameIterationStepModifier = 1.0
 
 # CSV config
 csvResultsFileLocation = "%s/%s" %(directoryOutput, csvFileName)
@@ -89,9 +91,11 @@ def get_fps(file):
     fps = int(fps_first_part / fps_second_part)
     return fps
 
-def listToString(s):
-    str1 = " "
-    return (str1.join(s))
+def listToString(listWords):
+    result = " "
+    for word in listWords:
+        result += word.upper()
+    return result
 
 def process_img_demo_purposes(img_rgb, template, count):
     img_gray = cv2.cvtColor(img_rgb, cv2.COLOR_BGR2GRAY)
@@ -126,17 +130,20 @@ def compare_two_images(sourceImage, templateToFind):
     return max_val
 
 def isQuestionsFrameVisible(percentageOfAreaThreshold, blue_l_h, blue_l_s, blue_l_v, blue_u_h, blue_u_s, blue_u_v, image):
+    hsvImage = cv2.cvtColor(image, cv2.COLOR_BGR2HSV).copy()
+    questionImgHeight, questionImgWidth, _ = hsvImage.shape 
+
     blue_lower_hsv = numpy.array([blue_l_h, blue_l_s, blue_l_v])
     blue_upper_hsv = numpy.array([blue_u_h, blue_u_s, blue_u_v])
-    blue_mask = cv2.inRange(image, blue_lower_hsv, blue_upper_hsv)
+    blue_mask = cv2.inRange(hsvImage, blue_lower_hsv, blue_upper_hsv)
     kernelBlue = numpy.ones((3,3), numpy.uint8)
     blue_mask = cv2.erode(blue_mask, kernelBlue)
     contoursInBlueMask, _ = cv2.findContours(blue_mask, cv2.RETR_TREE,  cv2.CHAIN_APPROX_SIMPLE)
-    questionImgHeight, questionImgWidth, _ = image.shape 
+
     totalPixelsQuestionRectangle = questionImgHeight * questionImgWidth
     areaThreashold = percentageOfAreaThreshold * totalPixelsQuestionRectangle
-    maxBlueArea = 0 
 
+    maxBlueArea = 0 
     for cnt in contoursInBlueMask:
         area = cv2.contourArea(cnt)
         approx = cv2.approxPolyDP(cnt, 0.03 * cv2.arcLength(cnt, True), True)
@@ -162,29 +169,15 @@ def isTextPresentInBothImages(reader, questionRectangleImage, answerRectangleIma
 
     return False
 
-def preprocessBeforeOCRTest(imageToProcess, invertColors):
+def preprocessBeforeOCR(imageToProcess):
     hsv = cv2.cvtColor(imageToProcess, cv2.COLOR_RGB2HSV)
-    # Define range of white color in HSV
-    lower_white = numpy.array([0, 0, 184])
-    upper_white = numpy.array([178, 239, 255])
-    # Threshold the HSV image
-    mask = cv2.inRange(hsv, lower_white, upper_white)
+    h, s, v1 = cv2.split(hsv)
 
-    # Remove noise
-    kernel_erode = numpy.ones((2,2), numpy.uint8)
-    eroded_mask = cv2.erode(mask, kernel_erode, iterations=2)
-    kernel_dilate = numpy.ones((3,3),numpy.uint8)
-    dilated_mask = cv2.dilate(mask, kernel_dilate, iterations=1)
-    
-    # blur threshold image
-    blur = cv2.medianBlur(mask, 3)
+    # Can be played with... 
+    thresholded = cv2.threshold(v1, 0, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU)[1]
+    medianBlur = cv2.medianBlur(thresholded, 3)
 
-    cv2.imshow('preprocessBeforeOCRTest', mask)
-    key = cv2.waitKey()
-    cv2.imshow('preprocessBeforeOCRTest', blur)
-    key = cv2.waitKey()
-
-    return blur
+    return medianBlur
 
 ############### Start of processing
 
@@ -264,13 +257,17 @@ answerRectangleDiffCounter = 0
 
 # Loop through all frames of the video
 while success:
+
+    # Show preview of processing... 
     original_img_preview = cv2.resize(originalFrame, (0, 0), fx=0.4, fy=0.4)
     cv2.imshow('Processing video...', original_img_preview)
     key = cv2.waitKey(1)
 
+    # Stats
     currentTime = 'Duration: {}'.format(datetime.now() - start_time)
     print_progress_bar(frameIndex, videoFileFramesTotalLength, "Frames: ", currentTime)
 
+    # MAGIC!
     if not gameFound and does_template_exist(originalFrame, templateToFindGameIntro, confidenceLevel = 0.5):
         gameFound = True
         print("\nGame start found. Frame: %d" %frameIndex)
@@ -279,7 +276,7 @@ while success:
         cv2.imshow('Game start:', gameFoundFrame_preview)
         key = cv2.waitKey(1)
 
-    if gameFound: #commonly known as "else"
+    if gameFound: # commonly known as "else"
         questionRectangleImage = originalFrame[seekAreaQuestionBorderUpperLineY:seekAreaQuestionBorderLowerLineY, seekAreaBorderLeftX:seekAreaBorderRightX].copy()
         answerRectangleImage = originalFrame[seekAreaQuestionBorderLowerLineY:seekAreaAnswerBorderLowerLineY, seekAreaBorderLeftX:seekAreaBorderRightX].copy()
 
@@ -310,18 +307,22 @@ while success:
                 cv2.line(debugCopy, (seekAreaBorderRightX, seekAreaQuestionBorderUpperLineY), (seekAreaBorderRightX, seekAreaBorderRightY), (0, 255, 0), thickness=1)
                 debugFrameName = "%s/%s-%d-1-frame-contours.jpg" % (directoryOutput, fileName, frameIndex)
                 cv2.imwrite(debugFrameName, debugCopy)
-                debugFrameName = "%s/%s-%d-2-question.jpg" % (directoryOutput, fileName, frameIndex)
+                debugFrameName = "%s/%s-%d-2.1-question.jpg" % (directoryOutput, fileName, frameIndex)
                 cv2.imwrite(debugFrameName, questionRectangleImage)
-                debugFrameName = "%s/%s-%d-3-answer.jpg" % (directoryOutput, fileName, frameIndex)
+                debugFrameName = "%s/%s-%d-3.1-answer.jpg" % (directoryOutput, fileName, frameIndex)
                 cv2.imwrite(debugFrameName, answerRectangleImage)
 
             if preprocessImageBeforeOCR:
-                questionRectangleImage = preprocessBeforeOCR(questionRectangleImage, invertColors=True)
-                answerRectangleImage = preprocessBeforeOCR(answerRectangleImage, invertColors=False)   
+                questionRectangleImage = preprocessBeforeOCR(questionRectangleImage.copy())
+                debugFrameName = "%s/%s-%d-2.2-question.jpg" % (directoryOutput, fileName, frameIndex)
+                cv2.imwrite(debugFrameName, questionRectangleImage)
+                answerRectangleImage = preprocessBeforeOCR(answerRectangleImage.copy())
+                debugFrameName = "%s/%s-%d-3.2-answer.jpg" % (directoryOutput, fileName, frameIndex)
+                cv2.imwrite(debugFrameName, answerRectangleImage)   
 
-            ocrQuestionList = reader.readtext(questionRectangleImage, detail = 0, paragraph=True)
+            ocrQuestionList = reader.readtext(questionRectangleImage, detail = 0, paragraph=True, x_ths = 1000, y_ths = 1000)
             ocrQuestion = listToString(ocrQuestionList)
-            ocrAnswerList = reader.readtext(answerRectangleImage, detail = 0, paragraph=True)
+            ocrAnswerList = reader.readtext(answerRectangleImage, detail = 0, paragraph=True, x_ths = 1000, y_ths = 1000)
             ocrAnswer = listToString(ocrAnswerList)
             print('\n#%d' % (numberOfFoundQuestionAnswerPair+1))
             print('Question: %s' %ocrQuestion)

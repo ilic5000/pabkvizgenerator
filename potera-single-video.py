@@ -13,8 +13,8 @@ import argparse
 parser = argparse.ArgumentParser(description="Potera single video processor",
                                  formatter_class=argparse.ArgumentDefaultsHelpFormatter)
 
-parser.add_argument("-srcdir", "--srcDirectory", help="directory where file is located", default="examples")
-parser.add_argument("-file", "--fileName", help="video file name to be processed", default="potjera-e1320-isecena-najkrace.mp4")
+parser.add_argument("-srcdir", "--srcDirectory", help="directory where file is located", default="examples/potera")
+parser.add_argument("-file", "--fileName", help="video file name to be processed", default="potjera-isecena.mp4")
 parser.add_argument("-o", "--output", help="directory for csv and debug data output", default="results")
 parser.add_argument("-lang", "--language", help="ocr language, can be either rs_latin or rs_cyrillic", default="rs_cyrillic")
 parser.add_argument("-csv", "--csvFileName", help="name for csv file", default="questions.csv")
@@ -235,11 +235,18 @@ numberOfFoundQuestionAnswerPair = 0
 
 # Loop through all frames of the video
 while success:
+
+    # Show preview of processing... 
+    processingPreviewThumbnail = cv2.resize(originalFrame, (0, 0), fx=0.4, fy=0.4).copy()
+    cv2.imshow('Processing video...', processingPreviewThumbnail)
+    key = cv2.waitKey(1)
+
+    # Stats
     currentTime = 'Time: {}'.format(datetime.now() - start_time)
     print_progress_bar(frameIndex, videoFileFramesTotalLength, "Frames: ", currentTime)
-
-    hsvFrameImage = cv2.cvtColor(originalFrame, cv2.COLOR_BGR2HSV)
     
+    hsvFrameImage = cv2.cvtColor(originalFrame, cv2.COLOR_BGR2HSV)
+
     # Create HSV masks 
     green_lower_hsv = numpy.array([green_l_h, green_l_s, green_l_v])
     green_upper_hsv = numpy.array([green_u_h, green_u_s, green_u_v])

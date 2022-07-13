@@ -8,7 +8,7 @@ from skimage.morphology import skeletonize
 # Configuration ##################################################
 
 fileDir = 'examples'
-fileName = 'slagalica-nova-pitanje-odgovor.png'
+fileName = 'Slagalica 01.01.2020. (1080p_25fps_H264-128kbit_AAC).mp4-23267-0-frame.jpg'
 filePath = "%s/%s"%(fileDir,fileName)
 
 writeDebugInfoOnImages = True
@@ -122,30 +122,28 @@ def preprocessBeforeOCRTest(imageToProcess, invertColors):
     h, s, v1 = cv2.split(hsv)
 
     #test1a = imageToProcess.astype("CV_16UC1")
-    test1 = cv2.threshold(v1, 0, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU)[1]
-    cv2.imshow('TESTTTTT 1', test1)
-    key = cv2.waitKey()
+    threasholdApplied = cv2.threshold(v1, 0, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU)[1]
+    cv2.imshow('Threashold applied', threasholdApplied)
 
-    medianBlur1 = cv2.medianBlur(test1, 3)
-    cv2.imshow('TESTTTTT 2', medianBlur1)
+    medianBlur = cv2.medianBlur(threasholdApplied, 3)
+    cv2.imshow('Median blur applied', medianBlur)
     key = cv2.waitKey()
     
+    # # Define range of white color in HSV
+    # lower_white = numpy.array([0, 0, 184])
+    # upper_white = numpy.array([178, 239, 255])
+    # # Threshold the HSV image
+    # maskWhite = cv2.inRange(hsv, lower_white, upper_white)
 
-    # Define range of white color in HSV
-    lower_white = numpy.array([0, 0, 184])
-    upper_white = numpy.array([178, 239, 255])
-    # Threshold the HSV image
-    maskWhite = cv2.inRange(hsv, lower_white, upper_white)
+    # # Remove noise
+    # kernel_erode = numpy.ones((2,2), numpy.uint8)
+    # eroded_mask = cv2.erode(maskWhite, kernel_erode, iterations=2)
 
-    # Remove noise
-    kernel_erode = numpy.ones((2,2), numpy.uint8)
-    eroded_mask = cv2.erode(maskWhite, kernel_erode, iterations=2)
-
-    kernel_dilate = numpy.ones((3,3),numpy.uint8)
-    dilated_mask = cv2.dilate(maskWhite, kernel_dilate, iterations=1)
+    # kernel_dilate = numpy.ones((3,3),numpy.uint8)
+    # dilated_mask = cv2.dilate(maskWhite, kernel_dilate, iterations=1)
     
-    medianBlur = cv2.medianBlur(eroded_mask, 5)
-    medianBlur2 = cv2.medianBlur(maskWhite, 5)
+    # medianBlur = cv2.medianBlur(eroded_mask, 5)
+    # medianBlur2 = cv2.medianBlur(maskWhite, 5)
 
     # cv2.imshow('preprocessBeforeOCRTest 1', maskWhite)
     # key = cv2.waitKey()
@@ -156,7 +154,7 @@ def preprocessBeforeOCRTest(imageToProcess, invertColors):
     # cv2.imshow('preprocessBeforeOCRTest 4', medianBlur2)
     # key = cv2.waitKey()
 
-    return test1
+    return medianBlur
 
 def unsharp_mask(image, kernel_size=(5, 5), sigma=1.0, amount=1.0, threshold=0):
     """Return a sharpened version of the image, using an unsharp mask."""
@@ -175,13 +173,13 @@ def unsharp_mask(image, kernel_size=(5, 5), sigma=1.0, amount=1.0, threshold=0):
 reader = easyocr.Reader(['en', ocrLanguage], gpu=False)
 
 cv2.namedWindow("HSVTrackbarsBlue")
-cv2.createTrackbar("Lower-H", "HSVTrackbarsBlue", 5, 180, nothing)
-cv2.createTrackbar("Lower-S", "HSVTrackbarsBlue", 0, 255, nothing)
-cv2.createTrackbar("Lower-V", "HSVTrackbarsBlue", 0, 255, nothing)
+cv2.createTrackbar("Lower-H", "HSVTrackbarsBlue", 100, 180, nothing)
+cv2.createTrackbar("Lower-S", "HSVTrackbarsBlue", 118, 255, nothing)
+cv2.createTrackbar("Lower-V", "HSVTrackbarsBlue", 42, 255, nothing)
 
-cv2.createTrackbar("Upper-H", "HSVTrackbarsBlue", 152, 180, nothing)
-cv2.createTrackbar("Upper-S", "HSVTrackbarsBlue", 75, 255, nothing)
-cv2.createTrackbar("Upper-V", "HSVTrackbarsBlue", 119, 255, nothing)
+cv2.createTrackbar("Upper-H", "HSVTrackbarsBlue", 120, 180, nothing)
+cv2.createTrackbar("Upper-S", "HSVTrackbarsBlue", 255, 255, nothing)
+cv2.createTrackbar("Upper-V", "HSVTrackbarsBlue", 210, 255, nothing)
 
 image = cv2.imread(filePath)
 

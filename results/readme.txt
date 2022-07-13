@@ -1,1 +1,1 @@
-output of the processing
+This directory is usually used to put processing data output

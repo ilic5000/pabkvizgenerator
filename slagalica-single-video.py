@@ -9,6 +9,8 @@ import csv
 import os.path
 import ffmpeg # https://github.com/deezer/spleeter/issues/101#issuecomment-554627345
 import argparse
+import pytesseract
+pytesseract.pytesseract.tesseract_cmd = r'C:\Program Files\Tesseract-OCR\tesseract.exe'
 
 # Hardcoded values
 templateToFindGameIntro = cv2.imread('examples/slagalica/slagalica-nova-ko-zna-zna-template.png', 0)
@@ -16,6 +18,11 @@ templateToFindNextGameIntro = cv2.imread('examples/slagalica/slagalica-nova-asoc
 
 diffSimilarirtyAnswerLowerValue = 0.1
 diffSimilarirtyAnswerUpperValue = 0.7
+
+# When answer/question are found, jump frames in order to avoid multiple detection of the same question
+# This can be done smarter, but this simple jump works just fine
+howManyFramesToJumpAfterSuccess = 25
+frameIterationStepModifier = 1
 
 # Arguments
 parser = argparse.ArgumentParser(description="Slagalica single video processor",
@@ -28,6 +35,7 @@ parser.add_argument("-lang", "--language", help="ocr language, can be either rs_
 parser.add_argument("-csv", "--csvFileName", help="name for csv file", default="questions.csv")
 parser.add_argument("-d", "--debugData", help="create frame image files for every image processed. note: can use up a lot of data space!", default="True")
 parser.add_argument("-poi", "--preprocessOCRImages", help="apply processing (blur, threshold, etc.) before doing ocr to images", default="True")
+parser.add_argument("-feocr", "--forceEasyOCR", help="force using of slower EasyOCR instead of default pytesseract", default="False")
 args = parser.parse_args()
 config = vars(args)
 
@@ -40,6 +48,7 @@ directoryOutput = config['output']
 csvFileName = config['csvFileName']
 createDebugData = (config['debugData'] == 'True')
 preprocessImageBeforeOCR = (config['preprocessOCRImages'] == 'True')
+forceUseOfEasyOCR = (config['forceEasyOCR'] == 'True')
 
 # OCR language (either latin or cyrillic, cannot do both at the same time)
 ocrLanguage = config['language']
@@ -55,10 +64,6 @@ blue_u_h = 120
 blue_u_s = 255
 blue_u_v = 210
 
-# When answer/question are found, jump frames in order to avoid multiple detection of the same question
-# This can be done smarter, but this simple jump works just fine
-howManyFramesToJumpAfterSuccess = 1
-frameIterationStepModifier = 1.0
 
 # CSV config
 csvResultsFileLocation = "%s/%s" %(directoryOutput, csvFileName)
@@ -186,6 +191,27 @@ def preprocessBeforeOCR(imageToProcess, lower_bound, upper_bound, type, useGauss
 
     return result
 
+def easyOCR(reader, image):
+    ocrQuestionList = reader.readtext(image, detail = 0, paragraph=True, x_ths = 1000, y_ths = 1000)
+    ocrQuestion = listToString(ocrQuestionList)
+    return ocrQuestion
+
+def pytesseractOCR(image, handleIncorrectQuestionMarkAtTheEnd):
+    recognizedText = pytesseract.image_to_string(image, lang='srp+srp_latn')
+    recognizedText = " ".join(recognizedText.split())
+    recognizedText = recognizedText.replace('|','')
+    recognizedText = recognizedText.replace('\n',' ')
+    recognizedText.replace("  ", " ")
+    recognizedText = recognizedText.strip()
+    recognizedText = " ".join(recognizedText.split())
+    recognizedText = recognizedText.upper()
+
+    if handleIncorrectQuestionMarkAtTheEnd:
+        recognizedText = recognizedText.rstrip('2')
+        recognizedText = recognizedText.rstrip(':2')
+        recognizedText = "%s%s" %(recognizedText, '?')
+    return recognizedText
+
 ############### Start of processing
 
 start_time = datetime.now()
@@ -207,7 +233,9 @@ if not os.path.isfile(filePath):
     sys.exit(1)
 
 # Load EasyOCR trained models (en is fallback)
-reader = easyocr.Reader(['en', ocrLanguage], gpu=True)
+reader = None
+if forceUseOfEasyOCR:
+    reader = easyocr.Reader(['en', ocrLanguage], gpu=True)
 
 # Initialize csv if not exist
 if not os.path.isfile(csvResultsFileLocation):
@@ -332,12 +360,14 @@ while success:
                 debugFrameName = "%s/%s-%d-3.2-answer.jpg" % (directoryOutput, fileName, frameIndex)
                 cv2.imwrite(debugFrameName, answerRectangleImage)   
 
-            ocrQuestionList = reader.readtext(questionRectangleImage, detail = 0, paragraph=True, x_ths = 1000, y_ths = 1000)
-            ocrQuestion = listToString(ocrQuestionList)
-            ocrAnswerList = reader.readtext(answerRectangleImage, detail = 0, paragraph=True, x_ths = 1000, y_ths = 1000)
-            ocrAnswer = listToString(ocrAnswerList)
-            print('\n#%d' % (numberOfFoundQuestionAnswerPair+1))
-            print('Question: %s' %ocrQuestion)
+            if forceUseOfEasyOCR:
+                ocrQuestion = easyOCR(reader, questionRectangleImage)
+                ocrAnswer= easyOCR(reader, answerRectangleImage)
+            else: # the default one
+                ocrQuestion = pytesseractOCR(questionRectangleImage, handleIncorrectQuestionMarkAtTheEnd = True)
+                ocrAnswer= pytesseractOCR(answerRectangleImage, handleIncorrectQuestionMarkAtTheEnd = False)
+
+            print('\n#%d Question: %s' % (numberOfFoundQuestionAnswerPair+1, ocrQuestion))
             print('Answer: %s' %ocrAnswer)
 
             numberOfFoundQuestionAnswerPair += 1
@@ -353,12 +383,15 @@ while success:
                 print("No more frames to process after frame jump...")
 
         # TRY TO FIND END OF THE GAME
-        if(numberOfFoundQuestionAnswerPair == 10 or does_template_exist(originalFrame, templateToFindNextGameIntro, confidenceLevel = 0.6)):
-            # Game finished
-            print("\nGame end found. Frame: %d" %frameIndex)
-            #cv2.imshow('main window', originalFrame)
+        if(numberOfFoundQuestionAnswerPair == 10):
+            print("\nGame end found. 10 Questions reached. Frame: %d" %frameIndex)
             break
-        
+        if(does_template_exist(originalFrame, templateToFindNextGameIntro, confidenceLevel = 0.6)):
+            
+            print("\nQuestions missed: %d" %(10-numberOfFoundQuestionAnswerPair))
+            print("Game end found. New game intro recognized. Frame: %d" %frameIndex)
+            break
+
     #process_img_demo_purposes(originalFrame, templateToFind, frameIndex)
     frameIndex += howManyFramesToIterateBy
     videoFile.set(cv2.CAP_PROP_POS_FRAMES, frameIndex)

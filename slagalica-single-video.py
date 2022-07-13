@@ -169,15 +169,22 @@ def isTextPresentInBothImages(reader, questionRectangleImage, answerRectangleIma
 
     return False
 
-def preprocessBeforeOCR(imageToProcess):
+def preprocessBeforeOCR(imageToProcess, lower_bound, upper_bound, type, useGaussianBlurBefore, useBlurAfter):
     hsv = cv2.cvtColor(imageToProcess, cv2.COLOR_RGB2HSV)
     h, s, v1 = cv2.split(hsv)
 
-    # Can be played with... 
-    thresholded = cv2.threshold(v1, 0, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU)[1]
-    medianBlur = cv2.medianBlur(thresholded, 3)
+    result = v1
 
-    return medianBlur
+    if useGaussianBlurBefore:
+        result = cv2.GaussianBlur(v1,(5,5),0)
+
+    # Can be played with... 
+    result = cv2.threshold(v1, lower_bound, upper_bound, type)[1]
+    
+    if useBlurAfter:
+        result = cv2.medianBlur(result, 3)
+
+    return result
 
 ############### Start of processing
 
@@ -313,10 +320,15 @@ while success:
                 cv2.imwrite(debugFrameName, answerRectangleImage)
 
             if preprocessImageBeforeOCR:
-                questionRectangleImage = preprocessBeforeOCR(questionRectangleImage.copy())
+                # OTSU is better for question rectangle - where white text is taking a lot of area and is dominating the image
+                # In the answer rectangle however, if answer is really short, OTCU can messup, so there we are using global threshold
+                
+                questionRectangleImage = preprocessBeforeOCR(questionRectangleImage.copy(), lower_bound=241, upper_bound=255, 
+                                                                type=cv2.THRESH_BINARY + cv2.THRESH_OTSU, useGaussianBlurBefore=True, useBlurAfter=True)
                 debugFrameName = "%s/%s-%d-2.2-question.jpg" % (directoryOutput, fileName, frameIndex)
                 cv2.imwrite(debugFrameName, questionRectangleImage)
-                answerRectangleImage = preprocessBeforeOCR(answerRectangleImage.copy())
+                answerRectangleImage = preprocessBeforeOCR(answerRectangleImage.copy(), lower_bound=241, upper_bound=255, 
+                                                                type=cv2.THRESH_BINARY, useGaussianBlurBefore=True, useBlurAfter=True)
                 debugFrameName = "%s/%s-%d-3.2-answer.jpg" % (directoryOutput, fileName, frameIndex)
                 cv2.imwrite(debugFrameName, answerRectangleImage)   
 
@@ -336,7 +348,7 @@ while success:
                 writer.writerow(csvDataRow)
 
             frameIndex += howManyFramesToJumpAfterSuccess
-            print("\nJump to %dth frame of %d" %(frameIndex, videoFileFramesTotalLength))
+            print("\nJumping to %dth frame of %d after found question/answer..." %(frameIndex, videoFileFramesTotalLength))
             if frameIndex >= videoFileFramesTotalLength:
                 print("No more frames to process after frame jump...")
 

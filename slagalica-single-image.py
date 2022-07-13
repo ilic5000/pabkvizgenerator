@@ -3,7 +3,9 @@ import cv2
 import numpy
 import sys
 import easyocr
+import pytesseract
 from skimage.morphology import skeletonize
+pytesseract.pytesseract.tesseract_cmd = r'C:\Program Files\Tesseract-OCR\tesseract.exe'
 
 # Configuration ##################################################
 
@@ -21,9 +23,12 @@ resizeImagePercentage = 1
 
 font = cv2.FONT_HERSHEY_COMPLEX
 
-# OCR language (either latin or cyrillic, cannot do both at the same time)
+# Easy OCR language (either latin or cyrillic, cannot do both at the same time), 'en' is always added alongside one of these
 #ocrLanguage = 'rs_latin'
 ocrLanguage = 'rs_cyrillic'
+
+# pytesseract
+# 'srp', 'srp_latn'
 
 ###############################################################################################
 
@@ -32,7 +37,7 @@ def nothing(x):
     pass
 
 def listToString(listWords):
-    result = " "
+    result = ""
     for word in listWords:
         result += word.upper()
     return result
@@ -117,44 +122,23 @@ def preprocessBeforeOCR(imageToProcess, invertColors):
     key = cv2.waitKey()
     return imageToProcess
 
-def preprocessBeforeOCRTest(imageToProcess, invertColors):
+def preprocessBeforeOCR(imageToProcess, lower_bound, upper_bound, type, useGaussianBlurBefore, useBlurAfter):
     hsv = cv2.cvtColor(imageToProcess, cv2.COLOR_RGB2HSV)
     h, s, v1 = cv2.split(hsv)
 
-    #test1a = imageToProcess.astype("CV_16UC1")
-    threasholdApplied = cv2.threshold(v1, 0, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU)[1]
-    cv2.imshow('Threashold applied', threasholdApplied)
+    result = v1
 
-    medianBlur = cv2.medianBlur(threasholdApplied, 3)
-    cv2.imshow('Median blur applied', medianBlur)
-    key = cv2.waitKey()
+    if useGaussianBlurBefore:
+        result = cv2.GaussianBlur(v1,(5,5),0)
+
+    # Can be played with... 
+    result = cv2.threshold(v1, lower_bound, upper_bound, type)[1]
     
-    # # Define range of white color in HSV
-    # lower_white = numpy.array([0, 0, 184])
-    # upper_white = numpy.array([178, 239, 255])
-    # # Threshold the HSV image
-    # maskWhite = cv2.inRange(hsv, lower_white, upper_white)
+    if useBlurAfter:
+        result = cv2.medianBlur(result, 3)
 
-    # # Remove noise
-    # kernel_erode = numpy.ones((2,2), numpy.uint8)
-    # eroded_mask = cv2.erode(maskWhite, kernel_erode, iterations=2)
+    return result
 
-    # kernel_dilate = numpy.ones((3,3),numpy.uint8)
-    # dilated_mask = cv2.dilate(maskWhite, kernel_dilate, iterations=1)
-    
-    # medianBlur = cv2.medianBlur(eroded_mask, 5)
-    # medianBlur2 = cv2.medianBlur(maskWhite, 5)
-
-    # cv2.imshow('preprocessBeforeOCRTest 1', maskWhite)
-    # key = cv2.waitKey()
-    # cv2.imshow('preprocessBeforeOCRTest 2', eroded_mask)
-    # key = cv2.waitKey()
-    # cv2.imshow('preprocessBeforeOCRTest 3', medianBlur)
-    # key = cv2.waitKey()
-    # cv2.imshow('preprocessBeforeOCRTest 4', medianBlur2)
-    # key = cv2.waitKey()
-
-    return medianBlur
 
 def unsharp_mask(image, kernel_size=(5, 5), sigma=1.0, amount=1.0, threshold=0):
     """Return a sharpened version of the image, using an unsharp mask."""
@@ -167,6 +151,21 @@ def unsharp_mask(image, kernel_size=(5, 5), sigma=1.0, amount=1.0, threshold=0):
         low_contrast_mask = numpy.absolute(image - blurred) < threshold
         numpy.copyto(sharpened, image, where=low_contrast_mask)
     return sharpened
+
+def removeNewlines(value):
+    return value.replace('\n',' ')
+
+def easyOCR(reader, image):
+    ocrQuestionList = reader.readtext(image, detail = 0, paragraph=True, x_ths = 1000, y_ths = 1000)
+    ocrQuestion = listToString(ocrQuestionList)
+    return ocrQuestion
+
+def pytesseractOCR(image):
+    recognizedText = pytesseract.image_to_string(image, lang='srp+srp_latn')
+    recognizedText = removeNewlines(recognizedText)
+
+    return recognizedText
+
 # Start processing...
 
 # Load model into the memory
@@ -275,17 +274,24 @@ while True:
         break
 
 if preprocessQuestionImageBeforeOCR:
-    questionRectangleImage = preprocessBeforeOCRTest(questionRectangleImage, invertColors=True)
+    questionRectangleImage = preprocessBeforeOCR(questionRectangleImage, lower_bound=241, upper_bound=255, 
+                                                    type=cv2.THRESH_BINARY + cv2.THRESH_OTSU, useGaussianBlurBefore=True, useBlurAfter=True)
 if preprocessAnswerImageBeforeOCR:
-    answerRectangleImage = preprocessBeforeOCRTest(answerRectangleImage, invertColors=False)                    
+    answerRectangleImage = preprocessBeforeOCR(answerRectangleImage, lower_bound=241, upper_bound=255, 
+                                                    type=cv2.THRESH_BINARY, useGaussianBlurBefore=True, useBlurAfter=True)                    
 
 cv2.imwrite("results/%s-question.jpg" %fileName, questionRectangleImage)
-ocrQuestionList = reader.readtext(questionRectangleImage, detail = 0, paragraph=True, x_ths = 1000, y_ths = 1000)
-ocrQuestion = listToString(ocrQuestionList)
+
+ocrQuestion = easyOCR(reader, questionRectangleImage)
+print(ocrQuestion)
+ocrQuestion = pytesseractOCR(questionRectangleImage)
+print(ocrQuestion)
 
 cv2.imwrite("results/%s-answer.jpg" %fileName, answerRectangleImage)
-ocrAnswerList = reader.readtext(answerRectangleImage, batch_size=3, detail = 0, paragraph=True, x_ths = 1000, y_ths = 1000)
-ocrAnswer = listToString(ocrAnswerList)
+ocrAnswer = easyOCR(reader, answerRectangleImage)
+print(ocrAnswer)
+ocrAnswer = pytesseractOCR(answerRectangleImage)
+print(ocrAnswer)
 
 print('Question: %s' %ocrQuestion)
 print('Answer: %s' %ocrAnswer)

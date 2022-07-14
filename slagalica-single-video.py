@@ -16,7 +16,7 @@ pytesseract.pytesseract.tesseract_cmd = r'C:\Program Files\Tesseract-OCR\tessera
 templateToFindGameIntro = cv2.imread('examples/slagalica/slagalica-nova-ko-zna-zna-template.png', 0)
 templateToFindNextGameIntro = cv2.imread('examples/slagalica/slagalica-nova-asoc-template.png', 0)
 
-diffSimilarirtyAnswerUpperValue = 0.2
+thresholdInNumberOfPixelsDifferenceInAnswerRectangle = 500
 
 # When answer/question are found, jump frames in order to avoid multiple detection of the same question
 # This can be done smarter, but this simple jump works just fine
@@ -35,6 +35,7 @@ parser.add_argument("-csv", "--csvFileName", help="name for csv file", default="
 parser.add_argument("-d", "--debugData", help="create frame image files for every image processed. note: can use up a lot of data space!", default="True")
 parser.add_argument("-poi", "--preprocessOCRImages", help="apply processing (blur, threshold, etc.) before doing ocr to images", default="True")
 parser.add_argument("-feocr", "--forceEasyOCR", help="force using of slower EasyOCR instead of default pytesseract", default="False")
+parser.add_argument("-showt", "--showtime", help="create windows and preview of everything that is happening", default="False")
 args = parser.parse_args()
 config = vars(args)
 
@@ -48,6 +49,7 @@ csvFileName = config['csvFileName']
 createDebugData = (config['debugData'] == 'True')
 preprocessImageBeforeOCR = (config['preprocessOCRImages'] == 'True')
 forceUseOfEasyOCR = (config['forceEasyOCR'] == 'True')
+showtimeMode = (config['showtime'] == 'True')
 
 # OCR language (either latin or cyrillic, cannot do both at the same time)
 ocrLanguage = config['language']
@@ -111,8 +113,9 @@ def process_img_demo_purposes(img_rgb, template, count):
     cv2.putText(img_rgb, "%s" % max_val, (100,100), cv2.FONT_HERSHEY_COMPLEX, 0.5, (0, 0, 255))
     cv2.rectangle(img_rgb, max_loc,  (max_loc[0]+templateWidth , max_loc[1] + templateHeight), (0,255,255), 2)
 
-    cv2.imshow('original', img_rgb)
-    key = cv2.waitKey(1)
+    if showtimeMode:
+        cv2.imshow('original', img_rgb)
+        key = cv2.waitKey(1)
 
     if max_val > 0.5:
         cv2.waitKey()
@@ -179,7 +182,7 @@ def isTextPresentInBothImages(reader, questionRectangleImage, answerRectangleIma
 
     return False
 
-def preprocessBeforeOCR(imageToProcess, lower_bound, upper_bound, type, useGaussianBlurBefore, useBlurAfter):
+def preprocessGetReadyForOCR(imageToProcess, lower_bound, upper_bound, type, useGaussianBlurBefore, useBlurAfter):
     hsv = cv2.cvtColor(imageToProcess, cv2.COLOR_RGB2HSV)
     h, s, v1 = cv2.split(hsv)
 
@@ -216,12 +219,25 @@ def pytesseractOCR(image, handleIncorrectQuestionMarkAtTheEnd):
         recognizedText = recognizedText.rstrip('2')
         recognizedText = recognizedText.rstrip(':2')
         recognizedText = "%s%s" %(recognizedText, '?')
+
     return recognizedText
+
+def unsharp_mask(image, kernel_size=(5, 5), sigma=1.0, amount=1.0, threshold=0):
+    """Return a sharpened version of the image, using an unsharp mask."""
+    blurred = cv2.GaussianBlur(image, kernel_size, sigma)
+    sharpened = float(amount + 1) * image - float(amount) * blurred
+    sharpened = numpy.maximum(sharpened, numpy.zeros(sharpened.shape))
+    sharpened = numpy.minimum(sharpened, 255 * numpy.ones(sharpened.shape))
+    sharpened = sharpened.round().astype(numpy.uint8)
+    if threshold > 0:
+        low_contrast_mask = numpy.absolute(image - blurred) < threshold
+        numpy.copyto(sharpened, image, where=low_contrast_mask)
+    return sharpened
 
 ############### Start of processing
 
 start_time = datetime.now()
-print("Single video file processing started of %s..." %filePath)
+print("Single video file processing started of \"%s\"" %filePath)
 
 if not os.path.isdir(srcDir):
     print('Incorrect srcDirectory: \"%s\" Does directory exist?' %srcDir)
@@ -298,11 +314,15 @@ answerRectangleDiffCounter = 0
 
 # Loop through all frames of the video
 while success:
+    # REALLY IMPORTANT! DO NOT REMOVE
+    # sharpened version of the image, using an unsharp mask
+    originalFrame = unsharp_mask(originalFrame)
 
     # Show preview of processing... 
-    original_img_preview = cv2.resize(originalFrame, (0, 0), fx=0.4, fy=0.4)
-    cv2.imshow('Processing video...', original_img_preview)
-    key = cv2.waitKey(1)
+    if showtimeMode:
+        original_img_preview = cv2.resize(originalFrame, (0, 0), fx=0.4, fy=0.4)
+        cv2.imshow('Processing video...', original_img_preview)
+        key = cv2.waitKey(1)
 
     # Stats
     currentTime = 'Duration: {}'.format(datetime.now() - start_time)
@@ -312,10 +332,12 @@ while success:
     if not gameFound and match_image_template(originalFrame, templateToFindGameIntro, confidenceLevel = 0.5):
         gameFound = True
         print("\nGame start found. Frame: %d" %frameIndex)
-        gameFoundFrame = originalFrame.copy()
-        gameFoundFrame_preview = cv2.resize(originalFrame, (0, 0), fx=0.2, fy=0.2)
-        cv2.imshow('Game start:', gameFoundFrame_preview)
-        key = cv2.waitKey(1)
+        
+        if showtimeMode:
+            gameFoundFrame = originalFrame.copy()
+            gameFoundFrame_preview = cv2.resize(originalFrame, (0, 0), fx=0.2, fy=0.2)
+            cv2.imshow('Game start:', gameFoundFrame_preview)
+            key = cv2.waitKey(1)
 
     if gameFound: # commonly known as "else"
         questionRectangleImage = originalFrame[seekAreaQuestionBorderUpperLineY:seekAreaQuestionBorderLowerLineY, seekAreaBorderLeftX:seekAreaBorderRightX].copy()
@@ -323,33 +345,36 @@ while success:
 
         questionFrameVisible = isQuestionsFrameVisible(percentageOfAreaThreshold, blue_l_h, blue_l_s, blue_l_v, blue_u_h, blue_u_s, blue_u_v, questionRectangleImage)
 
-        answerCurrentPreProccessed = preprocessBeforeOCR(answerRectangleImage.copy(), lower_bound=241, upper_bound=255, 
-                                                        type=cv2.THRESH_BINARY, useGaussianBlurBefore=True, useBlurAfter=True).copy()
+        answerCurrentPreProccessed = preprocessGetReadyForOCR(answerRectangleImage.copy(), lower_bound=241, upper_bound=255, 
+                                                                type=cv2.THRESH_BINARY, useGaussianBlurBefore=True, useBlurAfter=True).copy()
 
         questionWithAnswerFrameFound = False
 
         if questionFrameVisible: 
             if answerTemp is not None:
-                cv2.imshow('t1:', answerTemp.copy())
-                cv2.imshow('t2:', answerCurrentPreProccessed.copy())
-                key = cv2.waitKey(1)
+                if showtimeMode:
+                    cv2.imshow('t1:', answerTemp.copy())
+                    cv2.imshow('t2:', answerCurrentPreProccessed.copy())
+                    key = cv2.waitKey(1)
 
-                #diffSimilarityValue = compare_two_images(answerRectangleTemp, answerPreProccessed)
+                #diffSimilarityValue = compare_two_images(answerRectangleTemp, answerPreProccessed) #old way of comparing, not very good
                 diffSimilarityValueNumberOfPixels = compare_two_images_number_of_pixels(answerTemp, answerCurrentPreProccessed)
 
-                if diffSimilarityValueNumberOfPixels > 500:
-                    answerRectangleImage_preview = cv2.resize(answerRectangleImage, (0, 0), fx=0.2, fy=0.2)
-                    cv2.imshow('Change detected found:', answerRectangleImage_preview)
-                    key = cv2.waitKey(1)
+                if diffSimilarityValueNumberOfPixels > thresholdInNumberOfPixelsDifferenceInAnswerRectangle:
+                    if showtimeMode:
+                        answerRectangleImage_preview = cv2.resize(answerRectangleImage, (0, 0), fx=0.2, fy=0.2)
+                        cv2.imshow('Change detected found:', answerRectangleImage_preview)
+                        key = cv2.waitKey(1)
 
-                    #cv2.imshow('t1:', answerRectangleTemp)
-                    #cv2.imshow('t2:', answerPreProccessed)
-                    key = cv2.waitKey(1)
+                    if showtimeMode:
+                        cv2.imshow('t1:', answerTemp)
+                        cv2.imshow('t2:', answerCurrentPreProccessed)
+                        key = cv2.waitKey(1)
 
-                    #print("\ndiffSimilarityValue: {:.2f}".format(diffSimilarityValue))
                     answerRectangleDiffCounter += 1
                     questionWithAnswerFrameFound = (answerRectangleDiffCounter % 2 == 1)
-                    print("\nanswerRectangleDiffCounter: %d" %(answerRectangleDiffCounter))
+                    if showtimeMode:
+                        print("\nanswerRectangleDiffCounter: %d" %(answerRectangleDiffCounter))
             answerTemp = answerCurrentPreProccessed.copy()
 
         if questionWithAnswerFrameFound:
@@ -371,15 +396,11 @@ while success:
             if preprocessImageBeforeOCR:
                 # OTSU is better for question rectangle - where white text is taking a lot of area and is dominating the image
                 # In the answer rectangle however, if answer is really short, OTCU can messup, so there we are using global threshold
+                questionRectangleImage = preprocessGetReadyForOCR(questionRectangleImage.copy(), lower_bound=241, upper_bound=255, 
+                                                                     type=cv2.THRESH_BINARY + cv2.THRESH_OTSU, useGaussianBlurBefore=True, useBlurAfter=True)
                 
-                questionRectangleImage = preprocessBeforeOCR(questionRectangleImage.copy(), lower_bound=241, upper_bound=255, 
-                                                                type=cv2.THRESH_BINARY + cv2.THRESH_OTSU, useGaussianBlurBefore=True, useBlurAfter=True)
-                debugFrameName = "%s/%s-q%d-%d-2.2-question.jpg" % (directoryOutput, fileName, numberOfFoundQuestionAnswerPair+1, frameIndex)
-                cv2.imwrite(debugFrameName, questionRectangleImage)
-                answerRectangleImage = preprocessBeforeOCR(answerRectangleImage.copy(), lower_bound=241, upper_bound=255, 
-                                                                type=cv2.THRESH_BINARY, useGaussianBlurBefore=True, useBlurAfter=True)
-                debugFrameName = "%s/%s-q%d-%d-3.2-answer.jpg" % (directoryOutput, fileName, numberOfFoundQuestionAnswerPair+1, frameIndex)
-                cv2.imwrite(debugFrameName, answerRectangleImage)   
+                answerRectangleImage = preprocessGetReadyForOCR(answerRectangleImage.copy(), lower_bound=241, upper_bound=255, 
+                                                                     type=cv2.THRESH_BINARY, useGaussianBlurBefore=True, useBlurAfter=True)
 
             if forceUseOfEasyOCR:
                 ocrQuestion = easyOCR(reader, questionRectangleImage)
@@ -387,6 +408,12 @@ while success:
             else: # the default one
                 ocrQuestion = pytesseractOCR(questionRectangleImage, handleIncorrectQuestionMarkAtTheEnd = True)
                 ocrAnswer= pytesseractOCR(answerRectangleImage, handleIncorrectQuestionMarkAtTheEnd = False)
+
+            # Write frames to disk
+            debugFrameName = "%s/%s-q%d-%d-2.2-question.jpg" % (directoryOutput, fileName, numberOfFoundQuestionAnswerPair+1, frameIndex)
+            cv2.imwrite(debugFrameName, questionRectangleImage)
+            debugFrameName = "%s/%s-q%d-%d-3.2-answer.jpg" % (directoryOutput, fileName, numberOfFoundQuestionAnswerPair+1, frameIndex)
+            cv2.imwrite(debugFrameName, answerRectangleImage)   
 
             print('\n#%d Question: %s' % (numberOfFoundQuestionAnswerPair+1, ocrQuestion))
             print('Answer: %s' %ocrAnswer)

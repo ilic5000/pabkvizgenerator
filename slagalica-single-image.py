@@ -11,11 +11,13 @@ pytesseract.pytesseract.tesseract_cmd = r'C:\Program Files\Tesseract-OCR\tessera
 
 fileDir = 'examples'
 fileName = 'Screenshot_2.png'
-#fileName = 'Slagalica 01.01.2020. (1080p_25fps_H264-128kbit_AAC).mp4-23267-0-frame.jpg'
+fileName = 'Slagalica 01.01.2020. (1080p_25fps_H264-128kbit_AAC).mp4-q7-23585-0-frame-original.jpg'
 filePath = "%s/%s"%(fileDir,fileName)
 
+forceEasyOCR = False
+
 writeDebugInfoOnImages = True
-writeDebugInfoOnImagesMaskContours = True
+writeDebugInfoOnImagesMaskContours = False
 preprocessQuestionImageBeforeOCR = True
 preprocessAnswerImageBeforeOCR = True
 
@@ -107,7 +109,7 @@ def calculateMinMaxPoints(font, original_img_preview, original_img_previewHeight
         i = i + 1
     return ymin,ymax,xmin,xmax
 
-def preprocessBeforeOCR(imageToProcess, invertColors):
+def preprocessBeforeOCROld(imageToProcess, invertColors):
     imageToProcess = cv2.cvtColor(imageToProcess, cv2.COLOR_BGR2GRAY)
     if invertColors:
         imageToProcess = cv2.bitwise_not(imageToProcess)
@@ -170,7 +172,9 @@ def pytesseractOCR(image):
 # Start processing...
 
 # Load model into the memory
-reader = easyocr.Reader(['en', ocrLanguage], gpu=False)
+reader = None
+if forceEasyOCR:
+    reader = easyocr.Reader(['en', ocrLanguage], gpu=False)
 
 cv2.namedWindow("HSVTrackbarsBlue")
 cv2.createTrackbar("Lower-H", "HSVTrackbarsBlue", 100, 180, nothing)
@@ -262,7 +266,7 @@ while True:
     if maxBlueArea > 0:
         #Contour found
             if writeDebugInfoOnImagesMaskContours:
-                print(maxBlueArea)
+                #print(maxBlueArea)
                 cv2.drawContours(questionRectangleImage, [maxBlueAreaContourApprox], 0, (255, 0, 0), 2)
 
     cv2.imshow("question", questionRectangleImage)
@@ -275,24 +279,25 @@ while True:
         break
 
 if preprocessQuestionImageBeforeOCR:
-    questionRectangleImage = preprocessBeforeOCR(questionRectangleImage, lower_bound=241, upper_bound=255, 
+    questionRectangleImage = preprocessBeforeOCR(questionRectangleImage.copy(), lower_bound=241, upper_bound=255, 
                                                     type=cv2.THRESH_BINARY + cv2.THRESH_OTSU, useGaussianBlurBefore=True, useBlurAfter=True)
 if preprocessAnswerImageBeforeOCR:
-    answerRectangleImage = preprocessBeforeOCR(answerRectangleImage, lower_bound=241, upper_bound=255, 
+    answerRectangleImage = preprocessBeforeOCR(answerRectangleImage.copy(), lower_bound=241, upper_bound=255, 
                                                     type=cv2.THRESH_BINARY, useGaussianBlurBefore=True, useBlurAfter=True)                    
 
 cv2.imwrite("results/%s-question.jpg" %fileName, questionRectangleImage)
-
-ocrQuestion = easyOCR(reader, questionRectangleImage)
-print(ocrQuestion)
-ocrQuestion = pytesseractOCR(questionRectangleImage)
-print(ocrQuestion)
-
 cv2.imwrite("results/%s-answer.jpg" %fileName, answerRectangleImage)
-ocrAnswer = easyOCR(reader, answerRectangleImage)
-print(ocrAnswer)
+
+if forceEasyOCR:
+    print('EasyOCR: ')
+    ocrQuestion = easyOCR(reader, questionRectangleImage)
+    print(ocrQuestion)
+    ocrAnswer = easyOCR(reader, answerRectangleImage)
+    print(ocrAnswer)
+
+print('pytesseractOCR: ')
+ocrQuestion = pytesseractOCR(questionRectangleImage)
 ocrAnswer = pytesseractOCR(answerRectangleImage)
-print(ocrAnswer)
 
 print('Question: %s' %ocrQuestion)
 print('Answer: %s' %ocrAnswer)

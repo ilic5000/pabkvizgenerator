@@ -21,10 +21,10 @@ defaultFilePath = 'Slagalica 14.11.2018. (720p_25fps_H264-192kbit_AAC).mp4'
 templateToFindGameIntroImagePath = None
 templateToFindNextGameIntroImagePath = None
 
-# 0.4 is good for 1080p, 0.7 for 720p
-thresholdConfidenceLevelTemplateMatchingDesiredGameIntro = 0.7
-# 0.6 is good for 1080p, 0.9 for 720p
-thresholdConfidenceLevelTemplateMatchingNextGameIntro = 0.9
+# Fallbacks to default values based on video resolution 
+# if not set (value should be something between 0.0 and 1.0)
+thresholdConfidenceLevelTemplateMatchingDesiredGameIntro = None
+thresholdConfidenceLevelTemplateMatchingNextGameIntro = None
 
 thresholdInNumberOfPixelsDifferenceInAnswerRectangle = 500
 
@@ -32,13 +32,15 @@ thresholdInNumberOfPixelsDifferenceInAnswerRectangle = 500
 percentageOfAreaThreshold = 0.6
 
 # Should be under 3300 or 0 when not debugging
+# If to large, can skip start of the game :)
 frameIndexStartOffset = 2000
 
 # When answer/question are found, jump frames in order to avoid multiple detection of the same question
 # This can be done smarter, but this simple jump works just fine
 howManyFramesToJumpAfterSuccess = 0
 frameIterationStepModifierUntilGameIsFound = 1.0
-frameIterationStepModifierDuringTheGame = 0.3 # 0.3 to be safe that no important frame is skipped (1.0 is the average fps)
+# 0.3 to be safe that no important frame is skipped (1.0 is the average fps, i.e. by 1s processing)
+frameIterationStepModifierDuringTheGame = 0.3 
 
 # HSV masks values 
 # blue mask for question rectangle
@@ -59,9 +61,10 @@ parser.add_argument("-o", "--output", help="directory for csv and debug data out
 parser.add_argument("-lang", "--language", help="ocr language, can be either rs_latin or rs_cyrillic", default="rs_cyrillic")
 parser.add_argument("-csv", "--csvFileName", help="name for csv file", default="questions.csv")
 parser.add_argument("-d", "--debugData", help="create frame image files for every image processed. note: can use up a lot of data space!", default="True")
+parser.add_argument("-showt", "--showtime", help="create windows and preview of everything that is happening", default="True")
 parser.add_argument("-poi", "--preprocessOCRImages", help="apply processing (blur, threshold, etc.) before doing ocr to images", default="True")
 parser.add_argument("-feocr", "--forceEasyOCR", help="force using of slower EasyOCR instead of default pytesseract", default="False")
-parser.add_argument("-showt", "--showtime", help="create windows and preview of everything that is happening", default="True")
+
 args = parser.parse_args()
 config = vars(args)
 
@@ -84,6 +87,14 @@ templateToFindGameIntro720pImagePath = 'resources/slagalica/slagalica-nova-ko-zn
 templateToFindNextGameIntro720pImagePath = 'resources/slagalica/slagalica-nova-asoc-template-720p.png'
 templateToFindGameIntro1080pImagePath = 'resources/slagalica/slagalica-nova-ko-zna-zna-template-1080p.png'
 templateToFindNextGameIntro1080pImagePath = 'resources/slagalica/slagalica-nova-asoc-template-1080p.png'
+
+# 0.4 is good for 1080p, 0.7 for 720p
+thresholdConfidenceLevelTemplateMatchingDesiredGameIntro1080p = 0.4
+thresholdConfidenceLevelTemplateMatchingDesiredGameIntro720p = 0.7
+
+# 0.6 is good for 1080p, 0.9 for 720p
+thresholdConfidenceLevelTemplateMatchingNextGameIntro1080p = 0.6
+thresholdConfidenceLevelTemplateMatchingNextGameIntro720p = 0.9
 
 # CSV config
 csvResultsFileLocation = "%s/%s" %(directoryOutput, csvFileName)
@@ -146,6 +157,7 @@ def match_image_template(sourceImage, templateToFind, confidenceLevel):
     res = cv2.matchTemplate(img_gray, templateToFind, cv2.TM_CCOEFF_NORMED)
     min_val, max_val, min_loc, max_loc = cv2.minMaxLoc(res)
     if max_val >= confidenceLevel:
+        print("\nTemplate threshold: %s >= %s" %(round(max_val, 2), confidenceLevel))
         return True
     return False
 
@@ -224,6 +236,7 @@ def easyOCR(reader, image):
 
 def pytesseractOCR(image, handleIncorrectQuestionMarkAtTheEnd):
     recognizedText = pytesseract.image_to_string(image, lang='srp+srp_latn')
+    # Sanitization
     recognizedText = " ".join(recognizedText.split())
     recognizedText = recognizedText.replace('|','')
     recognizedText = recognizedText.replace('\n',' ')
@@ -234,6 +247,7 @@ def pytesseractOCR(image, handleIncorrectQuestionMarkAtTheEnd):
     recognizedText = recognizedText.upper()
 
     if handleIncorrectQuestionMarkAtTheEnd:
+        # ? character is recognized as number "2", probably font used is the problem
         recognizedText = recognizedText.rstrip('2')
         recognizedText = recognizedText.rstrip(':2')
         recognizedText = "%s%s" %(recognizedText, '?')
@@ -241,7 +255,7 @@ def pytesseractOCR(image, handleIncorrectQuestionMarkAtTheEnd):
     return recognizedText
 
 def unsharp_mask(image, kernel_size=(5, 5), sigma=1.0, amount=1.0, threshold=0):
-    """Return a sharpened version of the image, using an unsharp mask."""
+    # Return a sharpened version of the image, using an unsharp mask
     blurred = cv2.GaussianBlur(image, kernel_size, sigma)
     sharpened = float(amount + 1) * image - float(amount) * blurred
     sharpened = numpy.maximum(sharpened, numpy.zeros(sharpened.shape))
@@ -252,10 +266,11 @@ def unsharp_mask(image, kernel_size=(5, 5), sigma=1.0, amount=1.0, threshold=0):
         numpy.copyto(sharpened, image, where=low_contrast_mask)
     return sharpened
 
-############### Start of processing
+################################################################################
+################### Start of processing
 
 start_time = datetime.now()
-print("Single video file processing started of \"%s\"" %filePath)
+print("Video file processing started: \"%s\"" %filePath)
 
 if not os.path.isdir(srcDir):
     print('Incorrect srcDirectory: \"%s\" Does directory exist?' %srcDir)
@@ -320,30 +335,44 @@ areaThreashold = percentageOfAreaThreshold * totalPixels
 # Get matching template for video resolution
 print('Video dimensions are %dx%d' %(imageWidth, imageHeight))
 
+# This can probably be done a lot smarter, but I am really tired
+# TODO: do it smarter!
 if imageHeight == 1080:
     if templateToFindGameIntroImagePath is None:
         templateToFindGameIntroImagePath = templateToFindGameIntro1080pImagePath
+    if thresholdConfidenceLevelTemplateMatchingDesiredGameIntro is None:
+        thresholdConfidenceLevelTemplateMatchingDesiredGameIntro = thresholdConfidenceLevelTemplateMatchingDesiredGameIntro1080p
     if templateToFindNextGameIntroImagePath is None:
         templateToFindNextGameIntroImagePath = templateToFindNextGameIntro1080pImagePath
+    if thresholdConfidenceLevelTemplateMatchingNextGameIntro is None:
+        thresholdConfidenceLevelTemplateMatchingNextGameIntro = thresholdConfidenceLevelTemplateMatchingNextGameIntro1080p
 elif imageHeight == 720:
     if templateToFindGameIntroImagePath is None:
         templateToFindGameIntroImagePath = templateToFindGameIntro720pImagePath
+    if thresholdConfidenceLevelTemplateMatchingDesiredGameIntro is None:
+        thresholdConfidenceLevelTemplateMatchingDesiredGameIntro = thresholdConfidenceLevelTemplateMatchingDesiredGameIntro720p
     if templateToFindNextGameIntroImagePath is None:
         templateToFindNextGameIntroImagePath = templateToFindNextGameIntro720pImagePath
-else: # fallback to 720p values
+    if thresholdConfidenceLevelTemplateMatchingNextGameIntro is None:
+        thresholdConfidenceLevelTemplateMatchingNextGameIntro = thresholdConfidenceLevelTemplateMatchingNextGameIntro720p
+else: # fallback to 720p values (TODO: add more resolutions perhaps, or make it with one else)
     if templateToFindGameIntroImagePath is None:
         templateToFindGameIntroImagePath = templateToFindGameIntro720pImagePath
+    if thresholdConfidenceLevelTemplateMatchingDesiredGameIntro is None:
+        thresholdConfidenceLevelTemplateMatchingDesiredGameIntro = thresholdConfidenceLevelTemplateMatchingDesiredGameIntro720p
     if templateToFindNextGameIntroImagePath is None:
         templateToFindNextGameIntroImagePath = templateToFindNextGameIntro720pImagePath
+    if thresholdConfidenceLevelTemplateMatchingNextGameIntro is None:
+        thresholdConfidenceLevelTemplateMatchingNextGameIntro = thresholdConfidenceLevelTemplateMatchingNextGameIntro720p
 
 print('Using template for intro: %s' %templateToFindGameIntroImagePath)
+print('Using threshold for intro: %s' %thresholdConfidenceLevelTemplateMatchingDesiredGameIntro)
 print('Using template for outro: %s' %templateToFindNextGameIntroImagePath)
+print('Using threshold for outro: %s' %thresholdConfidenceLevelTemplateMatchingNextGameIntro)
 print()
 
 templateToFindGameIntro = cv2.imread(templateToFindGameIntroImagePath, 0)
 templateToFindNextGameIntro = cv2.imread(templateToFindNextGameIntroImagePath, 0)
-
-skipFirstGreenFoundMaskFrames = True
 
 # Get video bitrate for debug purposes
 bitrate = get_bitrate(filePath)
@@ -377,12 +406,12 @@ while success:
     # MAGIC!
     if not gameFound and match_image_template(originalFrame, templateToFindGameIntro, confidenceLevel = thresholdConfidenceLevelTemplateMatchingDesiredGameIntro):
         gameFound = True
-        print("\nGame start found. Frame: %d" %frameIndex)
+        print("Game start found. Frame: %d" %frameIndex)
         
         if showtimeMode:
             gameFoundFrame = originalFrame.copy()
             gameFoundFrame_preview = cv2.resize(originalFrame, (0, 0), fx=0.2, fy=0.2)
-            cv2.imshow('Game start:', gameFoundFrame_preview)
+            cv2.imshow('Game start frame:', gameFoundFrame_preview)
             key = cv2.waitKey(1)
 
     if gameFound: # commonly known as "else"
@@ -407,7 +436,7 @@ while success:
 
         if questionFrameVisible: 
             if answerTemp is not None:
-                #diffSimilarityValue = compare_two_images(answerRectangleTemp, answerPreProccessed) #old way of comparing, not very good
+                #diffSimilarityValue = compare_two_images(answerRectangleTemp, answerPreProccessed) # old way of comparing, turned out it is not very good
                 diffSimilarityValueNumberOfPixels = compare_two_images_number_of_pixels(answerTemp, answerCurrentPreProccessed)
 
                 if showtimeMode:
@@ -445,7 +474,7 @@ while success:
 
             if preprocessImageBeforeOCR:
                 # OTSU is better for question rectangle - where white text is taking a lot of area and is dominating the image
-                # In the answer rectangle however, if answer is really short, OTCU can messup, so there we are using global threshold
+                # In the answer rectangle however, if answer is really short, OTCU can messup, so, in that case we are using global threshold
                 questionRectangleImage = preprocessGetReadyForOCR(questionRectangleImage.copy(), lower_bound=241, upper_bound=255, 
                                                                      type=cv2.THRESH_BINARY + cv2.THRESH_OTSU, useGaussianBlurBefore=True, useBlurAfter=True)
                 
@@ -482,12 +511,11 @@ while success:
                     print("No more frames to process after frame jump...")
 
         # TRY TO FIND END OF THE GAME
-        if(numberOfFoundQuestionAnswerPair == 10):
+        if(numberOfFoundQuestionAnswerPair >= 10):
             print("\nGame end found. 10 Questions reached. Frame: %d" %frameIndex)
             break
         if(match_image_template(originalFrame, templateToFindNextGameIntro, confidenceLevel = thresholdConfidenceLevelTemplateMatchingNextGameIntro)):
-            
-            print("\nQuestions missed: %d" %(10-numberOfFoundQuestionAnswerPair))
+            print("Questions missed: %d" %(10-numberOfFoundQuestionAnswerPair))
             print("Game end found. New game intro recognized. Frame: %d" %frameIndex)
             break
 

@@ -12,35 +12,58 @@ import argparse
 import pytesseract
 pytesseract.pytesseract.tesseract_cmd = r'C:\Program Files\Tesseract-OCR\tesseract.exe'
 
-# Hardcoded values
-templateToFindGameIntro = cv2.imread('examples/slagalica/slagalica-nova-ko-zna-zna-template.png', 0)
-templateToFindNextGameIntro = cv2.imread('examples/slagalica/slagalica-nova-asoc-template.png', 0)
+# Hardcoded values 
+
+# Template image to use will be, if set to None, decided based on video dimensions, 
+# however, you can hard-code it here to force the template you want
+templateToFindGameIntroImagePath = None
+templateToFindNextGameIntroImagePath = None
+
+# 0.4 is good for 1080p, 0.7 for 720p
+thresholdConfidenceLevelTemplateMatchingDesiredGameIntro = 0.7
+# 0.6 is good for 1080p, 0.9 for 720p
+thresholdConfidenceLevelTemplateMatchingNextGameIntro = 0.9
 
 thresholdInNumberOfPixelsDifferenceInAnswerRectangle = 500
+
+# Found contours area size treshold (percentage of whole rectangle)
+percentageOfAreaThreshold = 0.6
+
+# Should be under 3300 or 0 when not debugging
+frameIndexStartOffset = 3300 
 
 # When answer/question are found, jump frames in order to avoid multiple detection of the same question
 # This can be done smarter, but this simple jump works just fine
 howManyFramesToJumpAfterSuccess = 0
-frameIterationStepModifier = 1
+frameIterationStepModifierUntilGameIsFound = 1.0
+frameIterationStepModifierDuringTheGame = 1.0
+
+# HSV masks values 
+# blue mask for question rectangle
+blue_l_h = 100
+blue_l_s = 118
+blue_l_v = 42
+blue_u_h = 120
+blue_u_s = 255
+blue_u_v = 210
 
 # Arguments
 parser = argparse.ArgumentParser(description="Slagalica single video processor",
                                  formatter_class=argparse.ArgumentDefaultsHelpFormatter)
 
 parser.add_argument("-srcdir", "--srcDirectory", help="directory where file is located", default="examples")
-parser.add_argument("-file", "--fileName", help="video file name to be processed", default="Slagalica 01.01.2020. (1080p_25fps_H264-128kbit_AAC).mp4")
+parser.add_argument("-file", "--fileName", help="video file name to be processed", default="Slagalica 24.06.2022. _ 151. ciklus (1080p_25fps_H264-128kbit_AAC).mp4")
 parser.add_argument("-o", "--output", help="directory for csv and debug data output", default="results")
 parser.add_argument("-lang", "--language", help="ocr language, can be either rs_latin or rs_cyrillic", default="rs_cyrillic")
 parser.add_argument("-csv", "--csvFileName", help="name for csv file", default="questions.csv")
 parser.add_argument("-d", "--debugData", help="create frame image files for every image processed. note: can use up a lot of data space!", default="True")
 parser.add_argument("-poi", "--preprocessOCRImages", help="apply processing (blur, threshold, etc.) before doing ocr to images", default="True")
 parser.add_argument("-feocr", "--forceEasyOCR", help="force using of slower EasyOCR instead of default pytesseract", default="False")
-parser.add_argument("-showt", "--showtime", help="create windows and preview of everything that is happening", default="False")
+parser.add_argument("-showt", "--showtime", help="create windows and preview of everything that is happening", default="True")
 args = parser.parse_args()
 config = vars(args)
 
-# Configuration ################################################################
-
+# Configuration setup ################################################################
 srcDir = config['srcDirectory']
 fileName = config['fileName']
 filePath = "%s/%s" %(srcDir, config['fileName'])
@@ -54,17 +77,11 @@ showtimeMode = (config['showtime'] == 'True')
 # OCR language (either latin or cyrillic, cannot do both at the same time)
 ocrLanguage = config['language']
 
-# Found contours area size treshold 
-percentageOfAreaThreshold = 0.6
-
-# HSV masks values
-blue_l_h = 100
-blue_l_s = 118
-blue_l_v = 42
-blue_u_h = 120
-blue_u_s = 255
-blue_u_v = 210
-
+# Templates for matching games
+templateToFindGameIntro720pImagePath = 'resources/slagalica/slagalica-nova-ko-zna-zna-template-720p.png'
+templateToFindNextGameIntro720pImagePath = 'resources/slagalica/slagalica-nova-asoc-template-720p.png'
+templateToFindGameIntro1080pImagePath = 'resources/slagalica/slagalica-nova-ko-zna-zna-template-1080p.png'
+templateToFindNextGameIntro1080pImagePath = 'resources/slagalica/slagalica-nova-asoc-template-1080p.png'
 
 # CSV config
 csvResultsFileLocation = "%s/%s" %(directoryOutput, csvFileName)
@@ -159,10 +176,9 @@ def isQuestionsFrameVisible(percentageOfAreaThreshold, blue_l_h, blue_l_s, blue_
     maxBlueArea = 0 
     for cnt in contoursInBlueMask:
         area = cv2.contourArea(cnt)
-        approx = cv2.approxPolyDP(cnt, 0.03 * cv2.arcLength(cnt, True), True)
-        numberOfPoints = len(approx)
-            
-        if area > maxBlueArea and numberOfPoints >= 3 and area > areaThreashold:
+        #approx = cv2.approxPolyDP(cnt, 0.03 * cv2.arcLength(cnt, True), True)
+        #numberOfPoints = len(approx)
+        if area > maxBlueArea and area > areaThreashold:
                 maxBlueArea = area
 
     if maxBlueArea > 0:
@@ -262,18 +278,18 @@ if forceUseOfEasyOCR:
 # Initialize csv if not exist
 if not os.path.isfile(csvResultsFileLocation):
     with open(csvResultsFileLocation, 'a+', encoding='UTF8', newline='') as f:
-        writer = csv.writer(f, delimiter =';')
+        writer = csv.writer(f, delimiter = csvDelimeter)
         writer.writerow(csvResultsHeaders)
 
 if not os.path.isfile(csvLogFileLocation):
     with open(csvLogFileLocation, 'a+', encoding='UTF8', newline='') as f:
-        writer = csv.writer(f, delimiter =';')
+        writer = csv.writer(f, delimiter = csvDelimeter)
         writer.writerow(csvLogHeaders)
 
 # Load up video and obtain first frame
 videoFile = cv2.VideoCapture(filePath)
 videoFileFramesTotalLength = int(videoFile.get(cv2.CAP_PROP_FRAME_COUNT))
-frameIndex = int(videoFileFramesTotalLength/2) + 3800 #todo remove later 3800
+frameIndex = int(videoFileFramesTotalLength/2) + frameIndexStartOffset
 videoFile.set(cv2.CAP_PROP_POS_FRAMES, frameIndex)
 success,originalFrame = videoFile.read()
 
@@ -294,6 +310,31 @@ seekAreaBorderRightY = seekAreaAnswerBorderLowerLineY
 totalPixels = imageHeight * imageWidth
 areaThreashold = percentageOfAreaThreshold * totalPixels
 
+# Get matching template for video resolution
+print('Video dimensions are %dx%d' %(imageWidth, imageHeight))
+if imageHeight == 1080:
+    if templateToFindGameIntroImagePath is None:
+        templateToFindGameIntroImagePath = templateToFindGameIntro1080pImagePath
+    if templateToFindNextGameIntroImagePath is None:
+        templateToFindNextGameIntroImagePath = templateToFindNextGameIntro1080pImagePath
+elif imageHeight == 720:
+    if templateToFindGameIntroImagePath is None:
+        templateToFindGameIntroImagePath = templateToFindGameIntro720pImagePath
+    if templateToFindNextGameIntroImagePath is None:
+        templateToFindNextGameIntroImagePath = templateToFindNextGameIntro720pImagePath
+else: #fallback to 720p
+    if templateToFindGameIntroImagePath is None:
+        templateToFindGameIntroImagePath = templateToFindGameIntro720pImagePath
+    if templateToFindNextGameIntroImagePath is None:
+        templateToFindNextGameIntroImagePath = templateToFindNextGameIntro720pImagePath
+
+print('Using template for intro: %s' %templateToFindGameIntroImagePath)
+print('Using template for outro: %s' %templateToFindNextGameIntroImagePath)
+print()
+
+templateToFindGameIntro = cv2.imread(templateToFindGameIntroImagePath, 0)
+templateToFindNextGameIntro = cv2.imread(templateToFindNextGameIntroImagePath, 0)
+
 skipFirstGreenFoundMaskFrames = True
 
 # Get video bitrate for debug purposes
@@ -302,22 +343,19 @@ bitrate = get_bitrate(filePath)
 videoAverageFps = get_fps(filePath)
 print("FPS: %d" %videoAverageFps)
 
-howManyFramesToIterateBy = int(frameIterationStepModifier * videoAverageFps)
-print("Frame iteration step: %d" %howManyFramesToIterateBy)
+howManyFramesToIterateBy = int(frameIterationStepModifierUntilGameIsFound * videoAverageFps)
+print("Frame iteration step (game lookup): %d" %howManyFramesToIterateBy)
 
 numberOfFoundQuestionAnswerPair = 0
 
 gameFound = False
+iterationStepChanged = False
 questionWithAnswerFrameFound = False
 answerTemp = None
 answerRectangleDiffCounter = 0
 
 # Loop through all frames of the video
 while success:
-    # REALLY IMPORTANT! DO NOT REMOVE
-    # sharpened version of the image, using an unsharp mask
-    originalFrame = unsharp_mask(originalFrame)
-
     # Show preview of processing... 
     if showtimeMode:
         original_img_preview = cv2.resize(originalFrame, (0, 0), fx=0.4, fy=0.4)
@@ -329,7 +367,7 @@ while success:
     print_progress_bar(frameIndex, videoFileFramesTotalLength, "Frames: ", currentTime)
 
     # MAGIC!
-    if not gameFound and match_image_template(originalFrame, templateToFindGameIntro, confidenceLevel = 0.5):
+    if not gameFound and match_image_template(originalFrame, templateToFindGameIntro, confidenceLevel = thresholdConfidenceLevelTemplateMatchingDesiredGameIntro):
         gameFound = True
         print("\nGame start found. Frame: %d" %frameIndex)
         
@@ -340,6 +378,15 @@ while success:
             key = cv2.waitKey(1)
 
     if gameFound: # commonly known as "else"
+        # REALLY IMPORTANT! DO NOT REMOVE
+        # sharpened version of the image, using an unsharp mask
+        originalFrame = unsharp_mask(originalFrame)
+
+        if not iterationStepChanged:
+            howManyFramesToIterateBy = int(frameIterationStepModifierDuringTheGame * videoAverageFps)
+            print("New frame iteration step (during the game): %d" %howManyFramesToIterateBy)
+            iterationStepChanged = True
+
         questionRectangleImage = originalFrame[seekAreaQuestionBorderUpperLineY:seekAreaQuestionBorderLowerLineY, seekAreaBorderLeftX:seekAreaBorderRightX].copy()
         answerRectangleImage = originalFrame[seekAreaQuestionBorderLowerLineY:seekAreaAnswerBorderLowerLineY, seekAreaBorderLeftX:seekAreaBorderRightX].copy()
 
@@ -352,23 +399,18 @@ while success:
 
         if questionFrameVisible: 
             if answerTemp is not None:
-                if showtimeMode:
-                    cv2.imshow('t1:', answerTemp.copy())
-                    cv2.imshow('t2:', answerCurrentPreProccessed.copy())
-                    key = cv2.waitKey(1)
-
                 #diffSimilarityValue = compare_two_images(answerRectangleTemp, answerPreProccessed) #old way of comparing, not very good
                 diffSimilarityValueNumberOfPixels = compare_two_images_number_of_pixels(answerTemp, answerCurrentPreProccessed)
+
+                if showtimeMode:
+                    cv2.imshow('answerTemp:', answerTemp.copy())
+                    cv2.imshow('answerCurrentPreProccessed:', answerCurrentPreProccessed.copy())
+                    key = cv2.waitKey(1)
 
                 if diffSimilarityValueNumberOfPixels > thresholdInNumberOfPixelsDifferenceInAnswerRectangle:
                     if showtimeMode:
                         answerRectangleImage_preview = cv2.resize(answerRectangleImage, (0, 0), fx=0.2, fy=0.2)
                         cv2.imshow('Change detected found:', answerRectangleImage_preview)
-                        key = cv2.waitKey(1)
-
-                    if showtimeMode:
-                        cv2.imshow('t1:', answerTemp)
-                        cv2.imshow('t2:', answerCurrentPreProccessed)
                         key = cv2.waitKey(1)
 
                     answerRectangleDiffCounter += 1
@@ -421,7 +463,7 @@ while success:
             numberOfFoundQuestionAnswerPair += 1
 
             with open(csvResultsFileLocation, 'a+', encoding='UTF8', newline='') as f:
-                writer = csv.writer(f, delimiter =';')
+                writer = csv.writer(f, delimiter = csvDelimeter)
                 csvDataRow = [ocrQuestion, ocrAnswer, bitrate, imageHeight, imageWidth, filePath, frameIndex]
                 writer.writerow(csvDataRow)
 
@@ -435,7 +477,7 @@ while success:
         if(numberOfFoundQuestionAnswerPair == 10):
             print("\nGame end found. 10 Questions reached. Frame: %d" %frameIndex)
             break
-        if(match_image_template(originalFrame, templateToFindNextGameIntro, confidenceLevel = 0.6)):
+        if(match_image_template(originalFrame, templateToFindNextGameIntro, confidenceLevel = thresholdConfidenceLevelTemplateMatchingNextGameIntro)):
             
             print("\nQuestions missed: %d" %(10-numberOfFoundQuestionAnswerPair))
             print("Game end found. New game intro recognized. Frame: %d" %frameIndex)
@@ -454,6 +496,6 @@ print('Duration: {}'.format(end_time - start_time))
 
 print("Finished processing of %s." %filePath)
 with open(csvLogFileLocation, 'a+', encoding='UTF8', newline='') as f:
-    writer = csv.writer(f, delimiter =';')
+    writer = csv.writer(f, delimiter = csvDelimeter)
     csvDataRow = [filePath, numberOfFoundQuestionAnswerPair, videoAverageFps, howManyFramesToIterateBy, duration]
     writer.writerow(csvDataRow)

@@ -18,7 +18,7 @@ primer da nekad se ne prikaze odgovor
 Slagalica 14.11.2018. (720p_25fps_H264-192kbit_AAC)
 
 
-
+extract resources for potera (template) ako ima tako nesto za poteru bese?
 
 https://stackoverflow.com/a/53672281
 

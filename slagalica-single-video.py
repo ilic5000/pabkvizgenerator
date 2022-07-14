@@ -14,7 +14,7 @@ pytesseract.pytesseract.tesseract_cmd = r'C:\Program Files\Tesseract-OCR\tessera
 
 # Hardcoded values 
 
-defaultFilePath = 'Slagalica 14.11.2018. (720p_25fps_H264-192kbit_AAC).mp4'
+defaultFilePath = 'Slagalica 20.11.2018. (682p_25fps_H264-128kbit_AAC).mp4'
 
 # Template image to use will be, if set to None, decided based on video dimensions, 
 # however, you can hard-code it here to force the template you want
@@ -487,6 +487,11 @@ while success:
             else: # the default one
                 ocrQuestion = pytesseractOCR(questionRectangleImage, handleIncorrectQuestionMarkAtTheEnd = True)
                 ocrAnswer= pytesseractOCR(answerRectangleImage, handleIncorrectQuestionMarkAtTheEnd = False)
+
+            # safety measures, sometimes first frames with answer have noise
+            if len(ocrAnswer.strip()) == 0 or len(ocrQuestion.strip()) == 0:
+                # if answer or question is empty, move to the next frame and try again
+                continue
 
             # Write frames to disk
             debugFrameName = "%s/%s-q%d-%d-2.2-question.jpg" % (directoryOutput, fileName, numberOfFoundQuestionAnswerPair+1, frameIndex)

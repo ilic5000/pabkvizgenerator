@@ -496,8 +496,15 @@ while success:
             # Write frames to disk
             debugFrameName = "%s/%s-q%d-%d-2.2-question.jpg" % (directoryOutput, fileName, numberOfFoundQuestionAnswerPair+1, frameIndex)
             cv2.imwrite(debugFrameName, questionRectangleImage)
+            
+            with open('%s.txt' %debugFrameName, 'w', encoding='utf-8') as f:
+                f.write(ocrQuestion)
+            
             debugFrameName = "%s/%s-q%d-%d-3.2-answer.jpg" % (directoryOutput, fileName, numberOfFoundQuestionAnswerPair+1, frameIndex)
             cv2.imwrite(debugFrameName, answerRectangleImage)   
+
+            with open('%s.txt' %debugFrameName, 'w', encoding='utf-8') as f:
+                f.write(ocrAnswer)
 
             print('\n#%d Question: %s' % (numberOfFoundQuestionAnswerPair+1, ocrQuestion))
             print('Answer: %s' %ocrAnswer)

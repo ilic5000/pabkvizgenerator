@@ -14,6 +14,8 @@ pytesseract.pytesseract.tesseract_cmd = r'C:\Program Files\Tesseract-OCR\tessera
 
 # Hardcoded values 
 
+defaultFilePath = 'Slagalica 14.11.2018. (720p_25fps_H264-192kbit_AAC).mp4'
+
 # Template image to use will be, if set to None, decided based on video dimensions, 
 # however, you can hard-code it here to force the template you want
 templateToFindGameIntroImagePath = None
@@ -30,13 +32,13 @@ thresholdInNumberOfPixelsDifferenceInAnswerRectangle = 500
 percentageOfAreaThreshold = 0.6
 
 # Should be under 3300 or 0 when not debugging
-frameIndexStartOffset = 3300 
+frameIndexStartOffset = 2000
 
 # When answer/question are found, jump frames in order to avoid multiple detection of the same question
 # This can be done smarter, but this simple jump works just fine
 howManyFramesToJumpAfterSuccess = 0
 frameIterationStepModifierUntilGameIsFound = 1.0
-frameIterationStepModifierDuringTheGame = 1.0
+frameIterationStepModifierDuringTheGame = 0.3 # 0.3 to be safe that no important frame is skipped (1.0 is the average fps)
 
 # HSV masks values 
 # blue mask for question rectangle
@@ -52,7 +54,7 @@ parser = argparse.ArgumentParser(description="Slagalica single video processor",
                                  formatter_class=argparse.ArgumentDefaultsHelpFormatter)
 
 parser.add_argument("-srcdir", "--srcDirectory", help="directory where file is located", default="examples")
-parser.add_argument("-file", "--fileName", help="video file name to be processed", default="Slagalica 24.06.2022. _ 151. ciklus (1080p_25fps_H264-128kbit_AAC).mp4")
+parser.add_argument("-file", "--fileName", help="video file name to be processed", default=defaultFilePath)
 parser.add_argument("-o", "--output", help="directory for csv and debug data output", default="results")
 parser.add_argument("-lang", "--language", help="ocr language, can be either rs_latin or rs_cyrillic", default="rs_cyrillic")
 parser.add_argument("-csv", "--csvFileName", help="name for csv file", default="questions.csv")
@@ -88,8 +90,8 @@ csvResultsFileLocation = "%s/%s" %(directoryOutput, csvFileName)
 csvLogFileLocation = "%s/log-%s" %(directoryOutput, csvFileName)
 
 csvDelimeter = ';'
-csvResultsHeaders = ['question', 'answer', 'video_bitrate', 'resolution_height', 'resolution_width', 'filename', 'frameNumber']
-csvLogHeaders = ['filename', 'found_questions_answers', 'fps', 'iteration_step', 'processing_duration']
+csvResultsHeaders = ['episode', '#', 'question', 'answer', 'filename', 'frameNumber']
+csvLogHeaders = ['filename', 'found_questions_answers', 'video_duration', 'fps', 'video_bitrate', 'resolution_width', 'resolution_height', 'iteration_step', 'processing_duration']
 
 # End of configuration ##############################################################################
 
@@ -275,11 +277,16 @@ reader = None
 if forceUseOfEasyOCR:
     reader = easyocr.Reader(['en', ocrLanguage], gpu=True)
 
-# Initialize csv if not exist
+# Initialize csvs if not exist
 if not os.path.isfile(csvResultsFileLocation):
     with open(csvResultsFileLocation, 'a+', encoding='UTF8', newline='') as f:
         writer = csv.writer(f, delimiter = csvDelimeter)
         writer.writerow(csvResultsHeaders)
+
+with open(csvResultsFileLocation, 'a+', encoding='UTF8', newline='') as f:
+    writer = csv.writer(f, delimiter = csvDelimeter)
+    csvDataRow = [fileName, '', '', '', '', '']
+    writer.writerow(csvDataRow)
 
 if not os.path.isfile(csvLogFileLocation):
     with open(csvLogFileLocation, 'a+', encoding='UTF8', newline='') as f:
@@ -312,6 +319,7 @@ areaThreashold = percentageOfAreaThreshold * totalPixels
 
 # Get matching template for video resolution
 print('Video dimensions are %dx%d' %(imageWidth, imageHeight))
+
 if imageHeight == 1080:
     if templateToFindGameIntroImagePath is None:
         templateToFindGameIntroImagePath = templateToFindGameIntro1080pImagePath
@@ -322,7 +330,7 @@ elif imageHeight == 720:
         templateToFindGameIntroImagePath = templateToFindGameIntro720pImagePath
     if templateToFindNextGameIntroImagePath is None:
         templateToFindNextGameIntroImagePath = templateToFindNextGameIntro720pImagePath
-else: #fallback to 720p
+else: # fallback to 720p values
     if templateToFindGameIntroImagePath is None:
         templateToFindGameIntroImagePath = templateToFindGameIntro720pImagePath
     if templateToFindNextGameIntroImagePath is None:
@@ -464,7 +472,7 @@ while success:
 
             with open(csvResultsFileLocation, 'a+', encoding='UTF8', newline='') as f:
                 writer = csv.writer(f, delimiter = csvDelimeter)
-                csvDataRow = [ocrQuestion, ocrAnswer, bitrate, imageHeight, imageWidth, filePath, frameIndex]
+                csvDataRow = ['', numberOfFoundQuestionAnswerPair, ocrQuestion, ocrAnswer, filePath, frameIndex]
                 writer.writerow(csvDataRow)
 
             if howManyFramesToJumpAfterSuccess > 0:
@@ -497,5 +505,9 @@ print('Duration: {}'.format(end_time - start_time))
 print("Finished processing of %s." %filePath)
 with open(csvLogFileLocation, 'a+', encoding='UTF8', newline='') as f:
     writer = csv.writer(f, delimiter = csvDelimeter)
-    csvDataRow = [filePath, numberOfFoundQuestionAnswerPair, videoAverageFps, howManyFramesToIterateBy, duration]
+    videoLength = videoFileFramesTotalLength/videoAverageFps
+    minutes = int(videoLength/60)
+    seconds = int(videoLength%60)
+    durationTextFormat = str(minutes) + ':' + str(seconds)
+    csvDataRow = [filePath, numberOfFoundQuestionAnswerPair, durationTextFormat, videoAverageFps, bitrate, imageWidth, imageHeight, howManyFramesToIterateBy, duration]
     writer.writerow(csvDataRow)

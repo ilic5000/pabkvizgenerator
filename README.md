@@ -12,7 +12,11 @@ Simply run
 
 `python potera-batch-video.py -srcdir "E:\Potera\uradjeno-3"  -o "results" -lang "rs_cyrillic" -csv "questions.csv" -d True`
 
-`python slagalica-batch-video.py -srcdir "E:\Slagalica\Slagalica 151 ciklus full"  -o "results" -csv "questions.csv" -d True`
+`python slagalica-batch-video.py -srcdir "E:\Slagalica\Slagalica 109 ciklus full"  -o "results" -csv "questions.csv" -d True`
+
+primer da nekad se ne prikaze odgovor
+Slagalica 14.11.2018. (720p_25fps_H264-192kbit_AAC)
+
 
 
 

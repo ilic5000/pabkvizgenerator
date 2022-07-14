@@ -25,16 +25,17 @@ if not os.path.isdir(directoryWithVideoFiles):
     print('Incorrect directory for videos: \"%s\"' %directoryWithVideoFiles)
     sys.exit(1)
 
-videoFiles = os.listdir(directoryWithVideoFiles)
+videoFiles = sorted(os.listdir(directoryWithVideoFiles))
 totalNumberOfFiles = len(videoFiles)
-i = 1
 
-print("Files directory set to: %s" %directoryWithVideoFiles)
-print("Found %d files to be processed" %totalNumberOfFiles)
-print()
+print("Files directory set to: \"%s\"" %directoryWithVideoFiles)
+print("Found %d files to be processed: " %totalNumberOfFiles)
+for file in videoFiles:
+    print("    %s" %file)
 
 start_time = datetime.now()
 
+i = 1
 for file in videoFiles:
     print()
     print("***********************************************************************************")

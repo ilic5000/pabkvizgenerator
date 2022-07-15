@@ -11,18 +11,18 @@ pytesseract.pytesseract.tesseract_cmd = r'C:\Program Files\Tesseract-OCR\tessera
 
 fileDir = 'examples'
 #fileName = 'Screenshot_2.png'
-fileName = '2019.11.13 Slagalica.mp4-q8-24700-0-frame-original.jpg'
+fileName = 'question-frame-example.jpg'
 filePath = "%s/%s"%(fileDir,fileName)
 
 forceEasyOCR = False
 
 writeDebugInfoOnImages = True
-writeDebugInfoOnImagesMaskContours = False
-preprocessQuestionImageBeforeOCR = True
-preprocessAnswerImageBeforeOCR = True
+writeDebugInfoOnImagesMaskContours = True
+preprocessQuestionImageBeforeOCR = False
+preprocessAnswerImageBeforeOCR = False
 
 percentageOfAreaThreshold = 0.6
-resizeImagePercentage = 1
+resizeImagePercentage = 0.5
 
 font = cv2.FONT_HERSHEY_COMPLEX
 
@@ -212,12 +212,12 @@ while True:
     seekAreaBorderRightY = seekAreaAnswerBorderLowerLineY
 
     if writeDebugInfoOnImages:
-        cv2.line(original_img_preview, (seekAreaBorderLeftX, seekAreaQuestionBorderUpperLineY), (seekAreaBorderRightX, seekAreaQuestionBorderUpperLineY), (0, 255, 0), thickness=1)
+        cv2.line(original_img_preview, (seekAreaBorderLeftX, seekAreaQuestionBorderUpperLineY), (seekAreaBorderRightX, seekAreaQuestionBorderUpperLineY), (0, 255, 0), thickness=2)
         cv2.line(original_img_preview, (seekAreaBorderLeftX, seekAreaQuestionBorderLowerLineY), (seekAreaBorderRightX, seekAreaQuestionBorderLowerLineY), (0, 255, 255), thickness=2)
-        cv2.line(original_img_preview, (seekAreaBorderLeftX, seekAreaAnswerBorderLowerLineY), (seekAreaBorderRightX, seekAreaAnswerBorderLowerLineY), (0, 255, 0), thickness=1)
+        cv2.line(original_img_preview, (seekAreaBorderLeftX, seekAreaAnswerBorderLowerLineY), (seekAreaBorderRightX, seekAreaAnswerBorderLowerLineY), (0, 255, 0), thickness=2)
         
-        cv2.line(original_img_preview, (seekAreaBorderLeftX, seekAreaQuestionBorderUpperLineY), (seekAreaBorderLeftX, seekAreaBorderLeftY), (0, 255, 0), thickness=1)
-        cv2.line(original_img_preview, (seekAreaBorderRightX, seekAreaQuestionBorderUpperLineY), (seekAreaBorderRightX, seekAreaBorderRightY), (0, 255, 0), thickness=1)
+        cv2.line(original_img_preview, (seekAreaBorderLeftX, seekAreaQuestionBorderUpperLineY), (seekAreaBorderLeftX, seekAreaBorderLeftY), (0, 255, 0), thickness=2)
+        cv2.line(original_img_preview, (seekAreaBorderRightX, seekAreaQuestionBorderUpperLineY), (seekAreaBorderRightX, seekAreaBorderRightY), (0, 255, 0), thickness=2)
 
     questionRectangleImage = original_img_preview[seekAreaQuestionBorderUpperLineY:seekAreaQuestionBorderLowerLineY, seekAreaBorderLeftX:seekAreaBorderRightX].copy()
     answerRectangleImage = original_img_preview[seekAreaQuestionBorderLowerLineY:seekAreaAnswerBorderLowerLineY, seekAreaBorderLeftX:seekAreaBorderRightX].copy()
@@ -268,6 +268,12 @@ while True:
             if writeDebugInfoOnImagesMaskContours:
                 #print(maxBlueArea)
                 cv2.drawContours(questionRectangleImage, [maxBlueAreaContourApprox], 0, (255, 0, 0), 2)
+                
+                temp = cv2.cvtColor(blue_mask.copy(),cv2.COLOR_GRAY2RGB)
+                cv2.drawContours(temp, [maxBlueAreaContourApprox], 0, (0, 0, 255), 2)
+                cv2.imshow('test', temp)
+                cv2.imwrite('results\yyy.jpg', temp)
+                key = cv2.waitKey(1)
 
     cv2.imshow("question", questionRectangleImage)
     cv2.imshow("answer", answerRectangleImage)            

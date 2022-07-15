@@ -23,7 +23,7 @@ def preprocessBeforeOCR(imageToProcess, lower_bound, upper_bound, type, useBlurB
 
     return result
     
-fileName1 = 'examples/2019.11.13 Slagalica.mp4-q8-24700-2.1-question.jpg'
+fileName1 = 'examples/question-frame-example.jpg'
 #fileName1 = 'examples/Slagalica 01.01.2020. (1080p_25fps_H264-128kbit_AAC).mp4-21685-2.1-question.jpg'
 
 image = cv2.imread(fileName1)

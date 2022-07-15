@@ -6,9 +6,9 @@ import easyocr
 
 # Configuration ##################################################
 
-fileName = 'examples/potera/potera-srpska-1.png'
+fileName = 'examples/question-frame-example.jpg'
 
-writeDebugInfoOnImages = True
+writeDebugInfoOnImages = False
 preprocessImageBeforeOCR = False
 percentageOfAreaThreshold = 0.0030
 resizeImagePercentage = 0.5

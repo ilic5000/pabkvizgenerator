@@ -29,3 +29,5 @@ pip install Pillow
 
 
 tesseract multiple language potential problem?
+
+dodaj linkove za sve slagalice po rezolucijama

@@ -40,7 +40,7 @@ frameIndexStartOffset = 2000
 howManyFramesToJumpAfterSuccess = 0
 frameIterationStepModifierUntilGameIsFound = 1.0
 # 0.3 to be safe that no important frame is skipped (1.0 is the average fps, i.e. by 1s processing)
-frameIterationStepModifierDuringTheGame = 0.3 
+frameIterationStepModifierDuringTheGame = 0.3
 
 # HSV masks values 
 # blue mask for question rectangle
@@ -473,10 +473,8 @@ while success:
                 cv2.imwrite(debugFrameName, answerRectangleImage)
 
             if preprocessImageBeforeOCR:
-                # OTSU is better for question rectangle - where white text is taking a lot of area and is dominating the image
-                # In the answer rectangle however, if answer is really short, OTCU can messup, so, in that case we are using global threshold
-                questionRectangleImage = preprocessGetReadyForOCR(questionRectangleImage.copy(), lower_bound=241, upper_bound=255, 
-                                                                     type=cv2.THRESH_BINARY + cv2.THRESH_OTSU, useGaussianBlurBefore=True, useBlurAfter=True)
+                questionRectangleImage = preprocessGetReadyForOCR(questionRectangleImage.copy(), lower_bound=222, upper_bound=255, 
+                                                                     type=cv2.THRESH_BINARY, useGaussianBlurBefore=True, useBlurAfter=True)
                 
                 answerRectangleImage = preprocessGetReadyForOCR(answerRectangleImage.copy(), lower_bound=241, upper_bound=255, 
                                                                      type=cv2.THRESH_BINARY, useGaussianBlurBefore=True, useBlurAfter=True)

@@ -10,8 +10,8 @@ pytesseract.pytesseract.tesseract_cmd = r'C:\Program Files\Tesseract-OCR\tessera
 # Configuration ##################################################
 
 fileDir = 'examples'
-fileName = 'Screenshot_2.png'
-fileName = 'Slagalica 01.01.2020. (1080p_25fps_H264-128kbit_AAC).mp4-q7-23585-0-frame-original.jpg'
+#fileName = 'Screenshot_2.png'
+fileName = '2019.11.13 Slagalica.mp4-q8-24700-0-frame-original.jpg'
 filePath = "%s/%s"%(fileDir,fileName)
 
 forceEasyOCR = False
@@ -279,8 +279,8 @@ while True:
         break
 
 if preprocessQuestionImageBeforeOCR:
-    questionRectangleImage = preprocessBeforeOCR(questionRectangleImage.copy(), lower_bound=241, upper_bound=255, 
-                                                    type=cv2.THRESH_BINARY + cv2.THRESH_OTSU, useGaussianBlurBefore=True, useBlurAfter=True)
+    questionRectangleImage = preprocessBeforeOCR(questionRectangleImage.copy(), lower_bound=222, upper_bound=255, 
+                                                    type=cv2.THRESH_BINARY, useGaussianBlurBefore=True, useBlurAfter=True)
 if preprocessAnswerImageBeforeOCR:
     answerRectangleImage = preprocessBeforeOCR(answerRectangleImage.copy(), lower_bound=241, upper_bound=255, 
                                                     type=cv2.THRESH_BINARY, useGaussianBlurBefore=True, useBlurAfter=True)                    

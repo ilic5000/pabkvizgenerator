@@ -9,12 +9,14 @@ import os.path
 import ffmpeg # https://github.com/deezer/spleeter/issues/101#issuecomment-554627345
 import argparse
 
+defaultFileName = "potjera-isecena.mp4"
+
 # Arguments
 parser = argparse.ArgumentParser(description="Potera single video processor",
                                  formatter_class=argparse.ArgumentDefaultsHelpFormatter)
 
 parser.add_argument("-srcdir", "--srcDirectory", help="directory where file is located", default="examples/potera")
-parser.add_argument("-file", "--fileName", help="video file name to be processed", default="potjera-isecena.mp4")
+parser.add_argument("-file", "--fileName", help="video file name to be processed", default=defaultFileName)
 parser.add_argument("-o", "--output", help="directory for csv and debug data output", default="results")
 parser.add_argument("-lang", "--language", help="ocr language, can be either rs_latin or rs_cyrillic", default="rs_cyrillic")
 parser.add_argument("-csv", "--csvFileName", help="name for csv file", default="questions.csv")

@@ -288,44 +288,103 @@ In the next sections, I will go through every step to explain the reasoning behi
 
 #### Rules of the game
 
-In both the Serbian and Croatian TV game shows, called "Potera" and "Potjera", respectively, for every player (total of 4 players per show) there are 3 possible games to play. The first and the third are done verbally and there are no visuals/graphics that shows questions on the screen. However in the second game, players are being presented with question and the possible answers. 
+In both the Serbian and Croatian TV game shows, for every player (total of 4 players per show) there are 3 possible (if player wins the second game, then third game becomes available) games to play. The first and the third are done verbally and there are no visuals/graphics that shows questions on the screen. However in the second game, players are being presented with question and the possible answers. 
 
-#### Finding the beginning and the end of the game
+#### Finding the green box with the correct answer
 
+In order to find first question, we need to find the graphics with question and possible answers boxes. After the correct answer is revealed, one of the possible answers, the one which was the correct one, will become green (with green background in the textbox). 
 
+If we look at a typical frame where the questions/answers are clearly visible, we can see that they looks pretty much the same in both versions of the game show.
 
- After the correct answer is revealed, the one of the possible answers which was the correct one will become green (green background in the textbox). 
+Potera:
 
+<img src="./docs/img/potera-question-frame.jpg" width="70%"/>
 
+Potjera:
 
+<img src="./docs/img/potjera-question-frame.jpg" width="70%"/>
 
+This means that for both versions of the show, we can use the same logic.
 
+In order to find the green box, we can use the same logic as for finding the blue box in the "Slagalica" game - create green mask, find all the contours/shapes, aproximate the shapes and find the largest one. If the area of that shape is larger than some kind of threashold, then, we have found the green textbox. 
 
-
-
-
-
-
-
-
-
-
-
+To avoid false positives, we can then apply the same logic, but this time with the blue mask, to find, in the same frame, the large rectangle with the question. 
 
 
+Consider this frame:
+
+<img src="./docs/img/potera-question-frame.jpg" width="70%"/>
 
 
+If we apply green mask (range of the green was a trial and error process) we, get something like this:
+
+<img src="./docs/img/potera-green-mask.png" width="70%"/>
+
+blue mask:
+
+<img src="./docs/img/potera-blue-mask.png" width="70%"/>
 
 
+and here are contours/shapes found in the green/blue masks. Please notice the orange seek area limits - by using these limits, we can discard all the points (red x,y coordinates) of the shapes that do not belong inside
+
+<img src="./docs/img/potera-masks-rectangles.png" width="70%"/>
+
+If both the green rectangle and the big blue one are visible in the same frame, and they are both located in the seek area (where we expect question/answer to appear), then we can continue with the text extraction/OCR.
+
+But before OCR section, here is a recording of the simple tool that I created for finding good HSV values for blue and green mask.
+
+<img src="./docs/img/potera-single-image-example-run.gif" width="70%"/>
 
 
+#### OCR processing of the frames with question and answers
+
+Creating images from frame is now pretty straightforward. 
+
+In "Slagalica" tesseract was used, but here we tried something else - EasyOCR. This is one of the few open source solutions for OCR that is not based on tesseract. So, naturally, I wanted to try it.
+
+For tesseract, manual preprocessing of the images is needed, however, EasyOCR does all of this automatically, which is pretty cool. 
 
 
+Original frame:
+
+<img src="./docs/img/potera-question-frame.jpg" width="70%"/>
+
+Question:
+
+<img src="./docs/img/potera-final-question.jpg" width="70%"/>
+
+EasyOCR: `Како се још зове манастир Манасија?`
+
+Answer:
+
+<img src="./docs/img/potera-final-answer.jpg" width="70%"/>
+
+EasyOCR: `Б Ресава`
 
 
+We can also try tesseract, instead of EasyOCR, but honestly, there is no need. EasyOCR has proven to be really good for Potera OCR.
 
-## How to run
+
+### Potera crawler example run
+
+<img src="./docs/img/potera-video-example-run.gif" width="70%"/>
+
+
+```
+Question: Како се још зове манастир Манасија?
+Answer: Б Ресава
+```
+
+
+## How to run scripts locally
 If you want to run this project locally, you will to install couple of dependencies first and obtain video files of the TV game shows for processing. 
+
+#### Additional helper scripts
+Explain the scripts
+
+dodaj linkove za sve slagalice po rezolucijama
+
+colin mecree... ne radi za eng trenutno dobro kada mesa slova batch2 ima primer
 
 ### Where to find TV show episodes?
 #### Slagalica
@@ -377,12 +436,7 @@ https://github.com/UB-Mannheim/tesseract/wiki
 pip install Pillow
 
 
-#### Additional helper scripts
-Explain the scripts
 
-dodaj linkove za sve slagalice po rezolucijama
-
-colin mecree... ne radi za eng trenutno dobro kada mesa slova batch2 ima primer
 
 
 
@@ -400,8 +454,6 @@ tesseract multiple language potential problem?
 Just follow this guide:
 
 https://stackoverflow.com/a/53672281
-
-
 
 
 # Slagalica issues

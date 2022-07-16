@@ -6,7 +6,7 @@ import easyocr
 
 # Configuration ##################################################
 
-fileName = 'examples/question-frame-example.jpg'
+fileName = ''
 
 writeDebugInfoOnImages = False
 preprocessImageBeforeOCR = False
@@ -145,21 +145,15 @@ while True:
     seekAreaBorderHorizontalLineY = 2 * int(original_img_previewHeight/3)
     seekAreaBorderHorizontalLineXStart = 0
     seekAreaBorderHorizontalLineXEnd = original_img_previewWidth
-
-    if writeDebugInfoOnImages:
-        cv2.line(original_img_preview, (seekAreaBorderHorizontalLineXStart, seekAreaBorderHorizontalLineY), (seekAreaBorderHorizontalLineXEnd, seekAreaBorderHorizontalLineY), (0, 255, 0), thickness=2)
-    
     seekAreaBorderLeftX = int(original_img_previewWidth/9.1)
     seekAreaBorderLeftY = original_img_previewHeight
-
-    if writeDebugInfoOnImages: 
-        cv2.line(original_img_preview, (seekAreaBorderLeftX, seekAreaBorderHorizontalLineY), (seekAreaBorderLeftX, seekAreaBorderLeftY), (0, 255, 0), thickness=2)
-
     seekAreaBorderRightX = int(8.1 * int(original_img_previewWidth/9.1))
     seekAreaBorderRightY = original_img_previewHeight
 
     if writeDebugInfoOnImages:
-        cv2.line(original_img_preview, (seekAreaBorderRightX, seekAreaBorderHorizontalLineY), (seekAreaBorderRightX, seekAreaBorderRightY), (0, 255, 0), thickness=2)
+        cv2.line(original_img_preview, (seekAreaBorderHorizontalLineXStart, seekAreaBorderHorizontalLineY), (seekAreaBorderHorizontalLineXEnd, seekAreaBorderHorizontalLineY), (74, 153, 255), thickness=3)
+        cv2.line(original_img_preview, (seekAreaBorderLeftX, seekAreaBorderHorizontalLineY), (seekAreaBorderLeftX, seekAreaBorderLeftY), (74, 153, 255), thickness=3)
+        cv2.line(original_img_preview, (seekAreaBorderRightX, seekAreaBorderHorizontalLineY), (seekAreaBorderRightX, seekAreaBorderRightY), (74, 153, 255), thickness=3)
 
     green_l_h = cv2.getTrackbarPos("Lower-H", "HSVTrackbarsGreen")
     green_l_s = cv2.getTrackbarPos("Lower-S", "HSVTrackbarsGreen")
@@ -231,7 +225,7 @@ while True:
     
     if maxGreenArea > 0:
         if writeDebugInfoOnImages:
-            cv2.drawContours(original_img_preview, [maxGreenAreaContourApprox], 0, (0, 255, 0), 2)
+            cv2.drawContours(original_img_preview, [maxGreenAreaContourApprox], 0, (0, 102, 0), 2)
 
     maxBlueArea = 0 
     maxBlueAreaContour = None

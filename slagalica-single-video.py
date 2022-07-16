@@ -455,7 +455,7 @@ while success:
                     answerRectangleDiffCounter += 1
                     questionWithAnswerFrameFound = (answerRectangleDiffCounter % 2 == 1)
                     if showtimeMode:
-                        print("\nanswerRectangleDiffCounter: %d" %(answerRectangleDiffCounter))
+                        print("\nChange in answer rectangle detected: #%d" %(answerRectangleDiffCounter))
             answerTemp = answerCurrentPreProccessed.copy()
 
         if questionWithAnswerFrameFound:

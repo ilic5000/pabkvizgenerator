@@ -1,6 +1,6 @@
 # pabkvizgenerator - TBD
 
-Computer vision (cv2 and ffmpeg) + OCR (EasyOCR and tesseract) python based project for finding and extracting questions and correct answers from **video files** of popular TV game shows in the Balkan region.
+Computer vision (cv2 and ffmpeg) + OCR (EasyOCR and tesseract) python based crawler for finding and extracting questions and correct answers from **video files** of popular TV game shows in the Balkan region.
 
 ## Idea & Motivation
 
@@ -48,7 +48,28 @@ In both Slagalica and Pot(j)era, the main idea is the same:
 6. Finish processing of the video file if the game has ended
 7. Move to the next question
 
-### Slagalica algorithm
+### Slagalica pseudo algorithm
+
+Here is the basic idea of the Slagalica crawler algorithm. 
+In the next section we will go through every step to explain the reasoning behind it.
+
+1. Open video file
+2. Skip first half of the video
+3. If game start is not found
+    1. Go through frames until template for game start is found
+4. If game start is found
+    1. In the seek question area look for the blue mask and the blue rectangle
+    2. If the question rectangle is found
+        1. Monitor for changes in the answer rectangle
+        2. Keep track of the changes
+        3. If change occured in the answer rectangle
+            1. Preprocess the question & answer
+            2. OCR 
+            3. Sanitization
+5. If number of found questions is 10 or game end found or video file has no more frames
+    1. Finish processing
+
+### Slagalica algorithm 
 
 In the TV game show called "Slagalica" there is a game near the end with the name "Ko zna zna" in which players are giving answers to 10 general knowledge questions. This is, I think, by far, the most liked game in the show. 
 
@@ -175,10 +196,9 @@ without answer:
 <img src="./docs/img/question-frame-example-answer-empty-processed.jpg" width="70%"/>
 
 
-And now if we count the white pixels in images, and if we choose some kind of threashold (e.g. 400 for number of pixels), we can compare two successive frames and figure out if there was a significant change in the frames. If change exists, that means that either answer or empty is now visible. And if we keep track of these changes, we can easily figure out when there is a question and when is an empty image (we need to process each question separately)
+And now if we count the white pixels in images, and if we choose some kind of threashold (e.g. 400 for number of pixels), we can compare two successive frames and figure out if there was a significant change in the frames. If change exists, that means that either answer or empty is now visible. And if we keep track of these changes, we can easily figure out when there is a question and when is an empty image (keep in mind that we need to process each question separately)
 
-
-#### OCR the frames with question and answers
+#### OCR processing of the frames with question and answers
 
 Now for the fun part :) 
 
@@ -187,15 +207,41 @@ We've successfuly figured out a way to find all questions and answers, but now w
 
 During my experiments, I've found that tesseract works a lot better if you preprocess the images and prepare them for OCR. For example, convert them to grayscale, remove noise, apply erode (thin the objects a little bit etc.). You can find the techniques I did before using OCR in the source code. It was really a trial and error process, I guess that my preproccesing that I did will not work universally, but in these really narrow and expected test cases, it worked flawlessly.
 
-Tesseract OCR:
+Preprocess examples:
 
+<img src="./docs/img/question-preprocess.gif" width="70%"/>
 
+<img src="./docs/img/answer-preprocess.gif" width="70%"/>
 
+Question:
+
+<img src="./docs/img/question-frame-example-question-preprocess.jpg" width="70%"/>
+
+After tesseract OCR processing, this is the string that we got:
+
+`кОЈИ БРАЗИЛАЦ ЈЕ ЈЕДИНИ ФУДБАЛЕР  У\n\nИСТОРИЈИ КОЈИ ЈЕ ОСВОЈИО ТРИ СВЕТСКА\nПРВЕНСТВА2\n\n`
+
+As you can see it's pretty good, but it requires sanitization. We can remove new lines (`\n`), change all letter to be uppercase, and remove double spaces (empty characters). Also, the last character, the "?" is, it seems, some other font, other than the main text, and because of it, tesseract thinks it's a number "2" :D
+
+If we do the sanitization, we finally get:
+
+`КОЈИ БРАЗИЛАЦ ЈЕ ЈЕДИНИ ФУДБАЛЕР У ИСТОРИЈИ КОЈИ ЈЕ ОСВОЈИО ТРИ СВЕТСКА ПРВЕНСТВА?`
+
+The answer is pretty forward now, but we need to keep in mind that "2" in the answer can be the actuall number. So, for answer we should skip "2" -> "?" sanitization.
+
+Answer:
+
+<img src="./docs/img/question-frame-example-answer-preprocess.jpg" width="70%"/>
+
+OCR: 
+
+`ПЕЛЕ`
 
 ### Slagalica Example run
 
+Now when you know how everything works, here is a recording of the processing of one of the episodes and the output that we received.
 
-
+<img src="./docs/img/slagalica-example-run.gif" width="100%"/>
 
 
 ## How to run
@@ -239,8 +285,7 @@ Simply run
 
 `python slagalica-batch-video.py -srcdir "E:\Slagalica\Slagalica 109 ciklus full"  -o "results" -csv "questions.csv" -d True`
 
-primer da nekad se ne prikaze odgovor
-Slagalica 14.11.2018. (720p_25fps_H264-192kbit_AAC)
+
 
 
 extract resources for potera (template) ako ima tako nesto za poteru bese?
@@ -275,3 +320,13 @@ tesseract multiple language potential problem?
 Just follow this guide:
 
 https://stackoverflow.com/a/53672281
+
+
+
+
+# Slagalica issues
+
+2020.06.18  out of frame question
+
+primer da nekad se ne prikaze odgovor
+Slagalica 14.11.2018. (720p_25fps_H264-192kbit_AAC)

@@ -1,6 +1,32 @@
 # Anansi - TV game show crawler
 
-Computer vision (cv2 and ffmpeg) + OCR (EasyOCR and tesseract) python based crawler for finding and extracting questions and correct answers from **video files** of popular TV game shows in the Balkan region.
+<img src="./docs/img/anansi-logo.png" width="70%" />
+
+
+[Anansi](https://en.wikipedia.org/wiki/Anansi) is a computer vision (cv2 and ffmpeg) + OCR (EasyOCR and tesseract) python based crawler for finding and extracting questions and correct answers from **video files** of popular TV game shows in the Balkan region.
+
+
+Table of Contents
+=================
+
+* [Anansi - TV game show crawler](#anansi-tv-game-show-crawler)
+   * [Idea & Motivation](#idea-&-motivation)
+        * [Reason #1](#reason-#1)
+        * [Reason #2](#reason-#2)
+   * [Slagalica crawler example run](#slagalica-crawler-example-run)
+    * [Idea & Motivation](#idea-&-motivation)
+        * [Reason #1](#reason-#1)
+        * [Reason #2](#reason-#2)
+   * [Slagalica crawler example run](#slagalica-crawler-example-run)
+    * [Idea & Motivation](#idea-&-motivation)
+        * [Reason #1](#reason-#1)
+        * [Reason #2](#reason-#2)
+   * [Slagalica crawler example run](#slagalica-crawler-example-run)
+    * [Idea & Motivation](#idea-&-motivation)
+        * [Reason #1](#reason-#1)
+        * [Reason #2](#reason-#2)
+   * [Slagalica crawler example run](#slagalica-crawler-example-run)
+TODO
 
 ## Idea & Motivation
 
@@ -333,7 +359,7 @@ If both the green rectangle and the big blue one are visible in the same frame, 
 
 But before OCR section, here is a recording of the simple tool that I created for finding good HSV values for blue and green mask.
 
-<img src="./docs/img/potera-single-image-example-run.gif" width="70%"/>
+<img src="./docs/img/potera-single-image-example-run.gif" width="100%"/>
 
 
 #### OCR processing of the frames with question and answers
@@ -367,7 +393,7 @@ We can also try tesseract, instead of EasyOCR, but honestly, there is no need. E
 
 ### Potera crawler example run
 
-<img src="./docs/img/potera-video-example-run.gif" width="70%"/>
+<img src="./docs/img/potera-video-example-run.gif" width="100%"/>
 
 
 ```

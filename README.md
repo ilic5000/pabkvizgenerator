@@ -263,8 +263,7 @@ Answer: СЕДАТИВ
 
 ### Pot(j)era TV game show
 
-<img src="./docs/img/potera-logo.jpg" width="30%"/>
-<img src="./docs/img/potjera-logo.jpg" width="30%"/>
+<img src="./docs/img/potera-logo.jpg" width="32.5%" /> <img src="./docs/img/potjera-logo.jpg" width="30%"/>
 
 * https://sr.m.wikipedia.org/sr-ec/%D0%9F%D0%BE%D1%82%D0%B5%D1%80%D0%B0_(%D0%BA%D0%B2%D0%B8%D0%B7)
 * https://hr.wikipedia.org/wiki/Potjera_(kviz)

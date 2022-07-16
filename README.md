@@ -1,6 +1,6 @@
 # Anansi - TV game show crawler
 
-<img src="./docs/img/anansi-logo.png" width="70%" />
+<img src="./docs/img/Anansi-logo.png" width="70%" />
 
 
 [Anansi](https://en.wikipedia.org/wiki/Anansi) is a computer vision (cv2 and ffmpeg) + OCR (EasyOCR and tesseract) python based crawler for finding and extracting questions and correct answers from **video files** of popular TV game shows in the Balkan region.

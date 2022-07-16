@@ -1,4 +1,4 @@
-# pabkvizgenerator - TBD
+# Anansi - TV game show crawler
 
 Computer vision (cv2 and ffmpeg) + OCR (EasyOCR and tesseract) python based crawler for finding and extracting questions and correct answers from **video files** of popular TV game shows in the Balkan region.
 
@@ -20,7 +20,7 @@ After couple of days, this is the project that I come up with.
 Enjoy and use/distribute freely.
 
 #### Reason #2
-Learn something new. I've never (not since college) done any computer vision, and I didn't have any experience with OCRs. So it was a nice opportunity to venture into the unknown.
+Learn something new. I've never, not since college anyway, done any computer vision, and I didn't have any experience with OCRs. So it was a nice opportunity to venture into the unknown.
 
 
 
@@ -48,10 +48,11 @@ In both Slagalica and Pot(j)era, the main idea is the same:
 6. Finish processing of the video file if the game has ended
 7. Move to the next question
 
-### Slagalica pseudo algorithm
+Pretty easy and straightforward, almost bulletproof idea, right? What could possibly go wrong? 
 
+### Slagalica pseudo algorithm
 Here is the basic idea of the Slagalica crawler algorithm. 
-In the next section we will go through every step to explain the reasoning behind it.
+In the next sections, I will go through every step to explain the reasoning behind it and discuss the current implementation.
 
 1. Open video file
 2. Skip first half of the video
@@ -69,9 +70,17 @@ In the next section we will go through every step to explain the reasoning behin
 5. If number of found questions is 10 or game end found or video file has no more frames
     1. Finish processing
 
+### Slagalica TV game show
+
+<img src="./docs/img/slagalica-logo.jpg" width="50%" />
+
+* https://sr.m.wikipedia.org/sr-ec/%D0%A2%D0%92_%D1%81%D0%BB%D0%B0%D0%B3%D0%B0%D0%BB%D0%B8%D1%86%D0%B0
+
 ### Slagalica algorithm 
 
-In the TV game show called "Slagalica" there is a game near the end with the name "Ko zna zna" in which players are giving answers to 10 general knowledge questions. This is, I think, by far, the most liked game in the show. 
+#### Rules of the game
+
+In the TV game show called "Slagalica" there is a game near the end with the name "Ko zna zna", in which players are giving answers to 10 general knowledge questions. This is, I think, by far, the most liked game in the show. 
 
 #### Finding the beginning and the end of the game
 
@@ -105,8 +114,11 @@ and with template:
 You can find the next game intro, which is surely the last game end.
 
 ##### Before 106. season 
-Before 106. season (before `4.5.2018`) the game intro was played behind the TV show hosts. So this straighforward way of matching templates cannot work just as good. TODO: Instead use contour matching with area - NOT IMPLEMENTED YET
+Before 106. season (before `4.5.2018`) the game intro was played on the big screen behind the TV show hosts. So this straighforward way of matching templates cannot work just as good as for after 106. season episodes. 
 
+<img src="./docs/img/slagalica-stara-ko-zna-zna-intro-example.png" width="70%"/>
+
+TODO: Instead template matching, use pink mask + contour matching with area - NOT IMPLEMENTED YET
 
 #### Finding the frame with question
 Now that we have game start frame, we need to find the very first frame after that where question rectangle is visible. Traditionally, the game has a rectangle shaped area where questions and answers are shown.
@@ -237,11 +249,81 @@ OCR:
 
 `ПЕЛЕ`
 
-### Slagalica Example run
+### Slagalica crawler example run
 
 Now when you know how everything works, here is a recording of the processing of one of the episodes and the output that we received.
 
 <img src="./docs/img/slagalica-example-run.gif" width="100%"/>
+
+`
+#1 Question: КОЈИМ ЛАТИНСКИМ ИМЕНОМ НА СЛОВО "С" НАЗИВАМО СРЕДСТВО ЗА СМИРЕЊЕ?
+Answer: СЕДАТИВ
+`
+
+
+### Pot(j)era TV game show
+
+<img src="./docs/img/potera-logo.JPG" width="30%"/>
+<img src="./docs/img/potjera-logo.JPG" width="30%"/>
+<img src="./docs/img/chase-logo.JPG" width="30%"/>
+
+* https://sr.m.wikipedia.org/sr-ec/%D0%9F%D0%BE%D1%82%D0%B5%D1%80%D0%B0_(%D0%BA%D0%B2%D0%B8%D0%B7)
+* https://hr.wikipedia.org/wiki/Potjera_(kviz)
+* https://en.wikipedia.org/wiki/The_Chase_(British_game_show)
+
+### Pot(j)era pseudo algorithm
+Here is the basic idea of the Potera and Potjera crawler algorithm. 
+In the next sections, I will go through every step to explain the reasoning behind it and discuss the current implementation.
+
+1. Open video file
+2. Create seek area in the bottom half of every frame
+3. Up until the end of the file do:
+    1. Using green mask find the green rectangle where answer is
+    2. If green rectangle is found:
+        1. Search if big blue rectangle above is also visible
+        2. If blue rectangle is visible:
+            1. OCR the green and blue rectangles
+            2. Skip 5sec (where green rectangle is not visible anymore)
+4. Finish processing
+
+### Pot(j)era algorithm 
+
+#### Rules of the game
+
+In both the Serbian and Croatian TV game shows, called "Potera" and "Potjera", respectively, for every player (total of 4 players per show) there are 3 possible games to play. The first and the third are done verbally and there are no visuals/graphics that shows questions on the screen. However in the second game, players are being presented with question and the possible answers. 
+
+#### Finding the beginning and the end of the game
+
+
+
+ After the correct answer is revealed, the one of the possible answers which was the correct one will become green (green background in the textbox). 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 ## How to run

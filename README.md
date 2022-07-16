@@ -2,7 +2,6 @@
 
 <img src="./docs/img/Anansi-logo.png" width="70%" />
 
-
 [Anansi](https://en.wikipedia.org/wiki/Anansi) is a computer vision (cv2 and ffmpeg) + OCR (EasyOCR and tesseract) python based crawler for finding and extracting questions and correct answers from **video files** of popular TV game shows in the Balkan region.
 
 
@@ -401,35 +400,33 @@ Question: Како се још зове манастир Манасија?
 Answer: Б Ресава
 ```
 
+## Optimization ideas
+* In Slagalica if not all 10 questions are found, maybe rollback to the start of the game and then process it again but this time with lower fps 
+* 
+
+## Future Roadmap
+
+* Handle 480p Slagalica 2014-2018 period
+* Do something with the data?
+* 
+
+## Known problems
+* If there are both Latin and Cyrillic text in the questions/answers, sometimes tesseract can return really bad results (EasyOCR is, it seems, better at this)
+* In some episodes of Slagalica answer is not shown to the audience, instead it immeadiately cuts to the intro of the next game (e.g. `14.11.2018.` episode)
+* On really rare occasions in Slagalica, question text can be seen above the question rectangle box (e.g. `18.06.2020.` episode)
+
 
 ## How to run scripts locally
-If you want to run this project locally, you will to install couple of dependencies first and obtain video files of the TV game shows for processing. 
-
-#### Additional helper scripts
-Explain the scripts
-
-dodaj linkove za sve slagalice po rezolucijama
-
-colin mecree... ne radi za eng trenutno dobro kada mesa slova batch2 ima primer
-
-### Where to find TV show episodes?
-#### Slagalica
-Here are packages linked for all slagalica
-
-#### Potera
-
-#### Potjera
 
 ### Script Requirements
 
-To be able to run the scripts, first you are going to need some dependencies installed that are not coming pre-installed with python installer by default.
+To be able to run the scripts, first you are going to need some dependencies installed that are not coming pre-installed with python by default.
 
 #### Pot(j)era requirements
 
 * Python 3.x
 * OpenCV - cv2
 * EasyOCR
-    * EasyOCR models
 * ffmpeg
 * Potera or Potjera full episodes video files
 
@@ -442,49 +439,101 @@ To be able to run the scripts, first you are going to need some dependencies ins
 * ffmpeg
 * Slagalica full episodes video files
 
-#### Run scripts
-
-Simply run
-
-`python potera-batch-video.py -srcdir "E:\Potera\uradjeno-3"  -o "results" -lang "rs_cyrillic" -csv "questions.csv" -d True`
-
-`python slagalica-batch-video.py -srcdir "E:\Slagalica\Slagalica 109 ciklus full"  -o "results" -csv "questions.csv" -d True`
-
-
-
-
-extract resources for potera (template) ako ima tako nesto za poteru bese?
-
-
-https://github.com/UB-Mannheim/tesseract
-
-https://github.com/UB-Mannheim/tesseract/wiki
-pip install Pillow
-
-
-
-
-
-
-
-
-
-## Optimization ideas
-
-## Roadmap
-
-## Known problems
-tesseract multiple language potential problem?
-
-## Pytesseract on Windows
+#### Pytesseract on Windows
 Just follow this guide:
 
 https://stackoverflow.com/a/53672281
 
+## Main scripts
 
-# Slagalica issues
+1. `slagalica-batch-video.py` 
 
-2020.06.18  out of frame question
+Slagalica batch processing (all video files are in the same directory) 
+```
+python slagalica-batch-video.py -srcdir "path" -o "path"
+```
+for example
 
-primer da nekad se ne prikaze odgovor
-Slagalica 14.11.2018. (720p_25fps_H264-192kbit_AAC)
+```
+python slagalica-batch-video.py -srcdir "E:\Slagalica\Slagalica-1080p-sve\batch3" -o "E:\Slagalica\Slagalica-1080p-sve\batch3\results" -csv "batch3-questions.csv" -d True -showt False
+```
+
+Arguments:
+```
+"-srcdir", "--source", help="directory with video files", default="./examples/testVideoBatch")
+"-o", "--output", help="directory for csv and debug data output", default="results")
+"-lang", "--language", help="ocr language, can be either rs_latin or rs_cyrillic", default="rs_cyrillic")
+"-csv", "--csvFileName", help="name for csv file", default="questions.csv")
+"-d", "--debugData", help="create frame image files for every image processed. note: can use up a lot of data space!", default="True")
+"-showt", "--showtime", help="create windows and preview of everything that is happening", default="False"
+```
+
+2. `potera-batch-video.py` 
+
+Potera batch processing (all video files are in the same directory) 
+
+```
+`python potera-batch-video.py -srcdir "path"  -o "path"`
+```
+For example:
+```
+`python potera-batch-video.py -srcdir "E:\Potera\uradjeno-3"  -o "results" -lang "rs_cyrillic" -csv "questions.csv" -d True`
+```
+
+Arguments:
+```
+"-srcdir", "--source", help="directory with video files", default="./examples/testVideoBatch"
+"-o", "--output", help="directory for csv and debug data output", default="results"
+"-lang", "--language", help="ocr language, can be either rs_latin or rs_cyrillic", default="rs_cyrillic"
+"-csv", "--csvFileName", help="name for csv file", default="questions.csv"
+"-d", "--debugData", help="create frame image files for every image processed. note: can use up a lot of data space!", default="True"
+```
+
+#### Additional helper scripts
+1. `potera-single-image.py` tool used to easily process single frame, instead of whole video. Mainly used for debugging and during development.
+2. `potera-single-video.py` script where actual processing of video file is done. Batch script is calling this script for every file in the directory.
+3. `slagalica-single-image.py`tool used to easily process single frame, instead of whole video. Mainly used for debugging and during development.
+4. `slagalica-single-video.py` script where actual processing of video file is done. Batch script is calling this script for every file in the directory.
+5. `slagalica-z-image-diff-test.py` debugging tool used to find differences between two images
+6. `slagalica-z-treshold-finder.py` debugging tool for finding correct values for global thresholding
+
+
+
+# Miscellaneous
+
+## Where to find TV show episodes?
+
+### Slagalica
+All the episodes can be found on the official channel of ["RTS Slagalica - Zvanični kanal"](https://www.youtube.com/c/RTSSlagalicazvani%C4%8Dnikanal]). However, there is no easy way to download all of the episodes. Youtube playlists on the channel are also often incomplete. So, I've manually went through all episodes and created [JDownloader2](https://jdownloader.org/jdownloader2) dlc files that can you easily download to your PC.
+
+[15.05.2014 - 03.05.2018 (480p and old intros) total: 1259 episodes](./resources/jdownloader-dlcs/Slagalica-480p-720p-stari-intro-stara-grafika.dlc)
+
+[04.05.2018 - 03.11.2018 (480p & 720p mixed, new intros but old graphics in the studio) total: 192 episodes](./resources/jdownloader-dlcs/Slagalica-720p-novi-intro-stara-grafika.dlc)
+
+[4.05.2018 - 02.11.2019 (720p new intros new graphics new studio) total: 363 episodes](./resources/jdownloader-dlcs/Slagalica-720p-novi-intro-nova-grafika.dlc)
+
+[03.11.2019 - now (1080p) total: 978 episodes](./resources/jdownloader-dlcs/Slagalica-1080p-sve.dlc)
+
+DLCs last updated: 14.07.2022.
+
+### Potera
+There is no official site or youtube channel. You can find a lot of episodes on Youtube, but they are regularly being removed. Here are some channels that currently have some episodes uploaded:
+
+[Potera-yt-Damjan-Petrovic.dlc total: 42 episodes](./resources/jdownloader-dlcs/Potera-yt-Damjan-Petrovic.dlc)
+
+[Potera-yt-pfc-zauvek.dlc total: 4 episodes](./resources/jdownloader-dlcs/Potera-yt-pfc-zauvek.dlc)
+
+DLCs last updated: 14.07.2022.
+
+### Potjera
+There is no official site or youtube channel. You can find a lot of episodes on Youtube, but they are regularly being removed. Here are some channels that currently have some episodes uploaded:
+
+[Potjera-Dionysius-Dominus-Trabem-Pannonius-april-maj-jun-2019.dlc total: 32 episodes](./resources/jdownloader-dlcs/Potjera-Dionysius-Dominus-Trabem-Pannonius-april-maj-jun-2019.dlc)
+
+[Potjera-EnigmaTV-decembar-2020.dlc total: 21 episodes](./resources/jdownloader-dlcs/Potjera-EnigmaTV-decembar-2020.dlc)
+
+[Potjera-Hrvatska.dlc total: 54 episodes](./resources/jdownloader-dlcs/Potjera-Hrvatska.dlc)
+
+[Potjera-Tomislav-Vrban.dlc total: 63 episodes](./resources/jdownloader-dlcs/Potjera-Tomislav-Vrban.dlc)
+
+DLCs last updated: 14.07.2022.

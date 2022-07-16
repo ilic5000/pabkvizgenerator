@@ -3,11 +3,7 @@ import cv2
 import numpy
 import sys
 from skimage.metrics import structural_similarity
-
-
-
 import tempfile
-
 import cv2
 import numpy as np
 from PIL import Image

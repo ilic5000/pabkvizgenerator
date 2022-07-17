@@ -72,7 +72,7 @@ Learn something new. I've never, not since college anyway, done any computer vis
 ## Results - extracted questions & answers
 Before we start with the algorithm explanation, requirements, and how-to-use guides, here is a full version of all the extracted questions & answers to the episodes.
 
-### Slagalica questions/answers
+### Slagalica
 Note: Episodes used `2019.11.02` to `2022.07.14` todo:
 
 ### Potera
@@ -92,14 +92,14 @@ In both Slagalica and Pot(j)era, the main idea is the same:
 3. Recognize the frame where both question and answer are visible
 4. Extract sections of the frame with the texts and preprocess them for OCR
 5. OCR the sections to get questions & answers
-6. Finish processing the video file if the game has ended
-7. Move to the next question
+6. Move to the next question
+7. Finish processing the video file if the game has ended
 
 The easy and straightforward, almost bulletproof idea, right? What could possibly go wrong? 
 
 ### Slagalica pseudo algorithm
 Here is the basic idea of the Slagalica crawler algorithm. 
-In the next sections, I will go through every step to explain the reasoning behind it and discuss the current implementation.
+
 
 1. Open the video file
 2. Skip the first half of the video
@@ -117,11 +117,13 @@ In the next sections, I will go through every step to explain the reasoning behi
 5. If the number of found questions is 10 or game end is found or the video file has no more frames
     1. Finish processing
 
+In the next sections, I will go through every step to explain the reasoning behind it and discuss the current implementation.
+
 ### Slagalica TV game show
 
 <img src="./docs/img/slagalica-logo.jpg" width="50%" />
 
-* https://sr.m.wikipedia.org/sr-ec/%D0%A2%D0%92_%D1%81%D0%BB%D0%B0%D0%B3%D0%B0%D0%BB%D0%B8%D1%86%D0%B0
+* [https://sr.m.wikipedia.org/sr-ec/%D0%A2%D0%92_%D1%81%D0%BB%D0%B0%D0%B3%D0%B0%D0%BB%D0%B8%D1%86%D0%B0](https://sr.m.wikipedia.org/sr-ec/%D0%A2%D0%92_%D1%81%D0%BB%D0%B0%D0%B3%D0%B0%D0%BB%D0%B8%D1%86%D0%B0)
 
 ### Slagalica algorithm 
 

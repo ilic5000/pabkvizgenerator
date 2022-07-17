@@ -186,7 +186,9 @@ By creating filtered out area, we have created our "seek area", and the borders 
 
 And if we use the percentage of the image height and width, then, the borders will be scalable and work with any resolution of the same proportions (e.g. 720p and 1080p).
 
-Now that we have a seek area, we need to somehow find the frame with the question rectangle. Remember, we up until now have found only the game beginning, and after that, we need to check future frames when will the question appear in the rectangle. Usually, a TV game show host is having a little bit of pre-game monologue, so the question is not immediately presented. Also, during the game, the TV show director can cut to some random shot in the studio, losing the question frame from the screen. So, we need a reliable way to find the frame with the question rectangle.
+Now that we have a seek area, we need to somehow find the frame with the question rectangle. Remember, up until now we have found only the game beginning, and after that, we need to check future frames when will the question appear in the rectangle. 
+
+Usually, a TV game show host is having a little bit of pre-game monologue, so the question is not immediately presented. Also, during the game, the TV show director can cut to some random shot in the studio, losing the question frame from the screen. So, we need a reliable way to find the frame with the question rectangle.
 
 How this rectangle looks from the start of the game (when we match the template) up until the question rectangle first frame:
 
@@ -433,7 +435,7 @@ Answer: Б Ресава
 
 * Handle 480p Slagalica 2014-2018 period
 * Do something with the data?
-* 
+* Slagalica algo can be modified to obtain texts from other games as well (Asocijacije, Spojnice, Slagalica)
 
 ## Known problems
 * If there are both Latin and Cyrillic text in the questions/answers, sometimes tesseract can return really bad results (EasyOCR is, it seems, better at this)

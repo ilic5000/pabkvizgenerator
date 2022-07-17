@@ -60,7 +60,7 @@ In the last couple of years, the pub quiz scene in Serbia has seen a rise in pop
 
 To my surprise, I found that there are only a couple of popular mobile/browser games that mimicks popular games from the TV shows, but are very limited when it comes to the actual distinct number of questions that they have in their databases. 
 
-I found that a lot of questions used in the pub quizzes are from TV game shows, so, naturally, I started watching the episodes of Slagalica (Serbian), Potera (Serbian), and Potjera (Croatian), however, that took too long. Episodes of Slagalica are 22mins and Potera (eng. The Chase) is more than 40mins long. And the most fun games in both of them are games where you can directly test your knowledge - in Slagalica game is called "Ko zna zna" and in Potera, I think it does not have a name officialy, it's always being referred to as a "second game" :). 
+I found that a lot of questions used in the pub quizzes are from TV game shows, so, naturally, I started watching the episodes of Slagalica (Serbian), Potera (Serbian), and Potjera (Croatian), however, that took too long. Episodes of Slagalica are 22mins and Potera (eng. The Chase) is more than 40mins long. And the most fun games in both of them are games where you can directly test your knowledge - in Slagalica game is called "Ko zna zna" and in Potera, I think it does not have a name officially, it's always being referred to as a "second game" :). 
 
 So after giving it some thought, I decided to create a program that will go through the episodes, find the games, extract the questions, find the answers and put all of that in some spreadsheet-friendly format such as ".csv". 
 
@@ -143,7 +143,7 @@ Game intro:
 
 <img src="./docs/img/slagalica-nova-ko-zna-zna-1080p.png" width="55%" height="55%"/>
 
-The easy thing to do was to create a template (smaller image based on the full frame) to match:
+The easy thing to do was to create a template (smaller image based on the full-frame) to match:
 
 <img src="./docs/img/slagalica-nova-ko-zna-zna-template-1080p.png" width="55%" height="55%"/>
 
@@ -165,7 +165,7 @@ and with the template:
 You can find the next game intro, which is surely the previous game's end.
 
 ##### Before 106th season 
-Before 106th season (before `4.5.2018`) the game intro was played on the big screen behind the TV show hosts. So this straightforward way of matching templates cannot work just as well as after 106th season episodes. 
+Before the 106th season (before `4.5.2018`) the game intro was played on the big screen behind the TV show hosts. So this straightforward way of matching templates cannot work just as well as after the 106th season episodes. 
 
 <img src="./docs/img/slagalica-stara-ko-zna-zna-intro-example.png" width="70%"/>
 
@@ -180,7 +180,7 @@ The frame showing this area with question and answer:
 
 And if we know that this area is always in the same place, and with the same dimensions/proportions, always at the bottom of the frame, we can filter out the rest of the frame, and use only this section for easier processing. We can split it to answer and questions parts. 
 
-By creating filtered out area, we have created our "seek area", and the borders for this area are marked in the image bellow:
+By creating a filtered-out area, we have created our "seek area", and the borders for this area are marked in the image below:
 
 <img src="./docs/img/question-frame-example-seek-area.jpg" width="70%"/>
 
@@ -206,7 +206,7 @@ if we apply the blue mask and transform it to grayscale (black and white), we ge
 
 As you can see, all of the desired blue shade in the image is white. And the image does not have the logo in the background of the question, which helps us a lot with the thing we will try to do next.
 
-The Blue mask image is good and all, however, what can we do with that info? Well, by looking at the blue rectangle question image, if you are familiar with the computer vision, the logical thing to do is to try to form a rectangle in this image. And we can do this by trying to find all of the contours (shapes) in this image. As you can expect, there will be a lot of shapes, however, we can approximate the shapes (make them with fewer points, and thus making them simpler). By doing this, we can get simple shapes such as squares, rectangles etc.
+The Blue mask image is good and all, however, what can we do with that info? Well, by looking at the blue rectangle question image, if you are familiar with computer vision, the logical thing to do is to try to form a rectangle in this image. And we can do this by trying to find all of the contours (shapes) in this image. As you can expect, there will be a lot of shapes, however, we can approximate the shapes (make them with fewer points, thus making them simpler). By doing this, we can get simple shapes such as squares, rectangles, etc.
 
 Example of approximation of the shapes (original image, approximation, and direct contour/shape)
 
@@ -321,7 +321,7 @@ Answer: СЕДАТИВ
 
 <img src="./docs/img/potera-logo.jpg" width="32.5%" /> <img src="./docs/img/potjera-logo.jpg" width="30%"/>
 
-* https://sr.m.wikipedia.org/sr-el/Potera)
+* https://sr.m.wikipedia.org/sr-el/Potera
 * https://hr.wikipedia.org/wiki/Potjera_(kviz)
 * https://en.wikipedia.org/wiki/The_Chase_(British_game_show)
 
@@ -337,7 +337,7 @@ Here is the basic idea of the Potera and Potjera crawler algorithm.
         2. If the blue rectangle is visible:
             1. OCR the green and blue rectangles
             2. Skip 5sec (where the green rectangle is not visible anymore)
-4. Finish processing of the video
+4. Finish processing the video
 
 In the next sections, I will go through every step to explain the reasoning behind it and discuss the current implementation.
 
@@ -393,7 +393,7 @@ But before the OCRing section, here is a recording of the simple tool that I cre
 
 Creating images from the frame is now pretty straightforward. 
 
-In "Slagalica" tesseract was used, but here we tried something else - EasyOCR. This is one of the few open source solutions for OCR that is not based on tesseract. So, naturally, I wanted to try it.
+In "Slagalica" tesseract was used, but here I tried something else - EasyOCR. This is one of the few open source solutions for OCR that is not based on tesseract. So, naturally, I wanted to try it.
 
 For tesseract, manual preprocessing of the images is needed, however, EasyOCR does all of this automatically, which is pretty cool. 
 
@@ -429,13 +429,13 @@ Answer: Б Ресава
 
 ## Optimization ideas
 * In Slagalica if not all 10 questions are found, maybe rollback to the start of the game and then process it again but this time with lower fps 
-* 
+* Contour/shape recognition can maybe be achieved by using smart thresholds, but it will require a lot of testing and figuring out what setting works the best
 
 ## Future Roadmap
 
 * Handle 480p Slagalica 2014-2018 period
 * Do something with the data?
-* Slagalica algo can be modified to obtain texts from other games as well (Asocijacije, Spojnice, Slagalica)
+* Slagalica algo can be modified to obtain texts from other games as well ("Asocijacije", "Spojnice", "Slagalica" etc.)
 
 ## Known problems
 * If there are both Latin and Cyrillic text in the questions/answers, sometimes tesseract can return really bad results (EasyOCR is, it seems, better at this)

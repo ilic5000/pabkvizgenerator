@@ -97,9 +97,10 @@ In both Slagalica and Pot(j)era, the main idea is the same:
 
 The easy and straightforward, almost bulletproof idea, right? What could possibly go wrong? 
 
+## Slagalica
+
 ### Slagalica pseudo algorithm
 Here is the basic idea of the Slagalica crawler algorithm. 
-
 
 1. Open the video file
 2. Skip the first half of the video
@@ -307,6 +308,8 @@ Now when you know how everything works, here is a recording of the processing of
 Answer: СЕДАТИВ
 ```
 
+## Po(jera)
+
 ### Pot(j)era TV game show
 
 <img src="./docs/img/potera-logo.jpg" width="32.5%" /> <img src="./docs/img/potjera-logo.jpg" width="30%"/>
@@ -317,7 +320,6 @@ Answer: СЕДАТИВ
 
 ### Pot(j)era pseudo algorithm
 Here is the basic idea of the Potera and Potjera crawler algorithm. 
-In the next sections, I will go through every step to explain the reasoning behind it and discuss the current implementation.
 
 1. Open the video file
 2. Create seek area in the bottom half of every frame
@@ -328,7 +330,9 @@ In the next sections, I will go through every step to explain the reasoning behi
         2. If the blue rectangle is visible:
             1. OCR the green and blue rectangles
             2. Skip 5sec (where the green rectangle is not visible anymore)
-4. Finish processing
+4. Finish processing of the video
+
+In the next sections, I will go through every step to explain the reasoning behind it and discuss the current implementation.
 
 ### Pot(j)era algorithm 
 

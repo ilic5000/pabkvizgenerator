@@ -150,9 +150,11 @@ The easy thing to do was to create a template (smaller image based on the full f
 
 Using OpenCV you can try to find a template in the image, and the OpenCV will return the confidence level, i.e. how similar are both of the images. By using some kind of threshold (e.g. if the similarity is above `0.5`), it is trivial to find the game start with this logic.
 
-To save the processing time, next game intro should also be found and be used as a game end. Sure, you can have a condition if 10 questions are found to end immediately, but sometimes, not all 10 questions will be found (sometimes TV show editor cuts to the next game before showing the last question e.g. episode from `14.11.2018.`).
+To save the processing time, the next game (the game after "Ko zna zna") intro should also be found and be used as a game end. Sure, you can have a condition if 10 questions are found to end immediately, but sometimes, not all 10 questions will be found (sometimes TV show editor cuts to the next game before showing the last question (e.g. episode from `14.11.2018`).
 
-Using the same logic as for the game intro, you can find the game outro (game end). And one game end is for another game the beginning mindblown.gif. :) So, by using this reference Game intro (the game after the main one):
+Using the same logic as for the game intro, you can find the game outro (game end). And as you know, one game end is for another game the beginning - :O mindblown.gif. :) 
+
+So, by using this reference game intro (the game after the main one):
 
 <img src="./docs/img/slagalica-nova-asoc-1080p.png" width="55%" height="55%"/>
 

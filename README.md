@@ -124,7 +124,7 @@ In the next sections, I will go through every step to explain the reasoning behi
 
 <img src="./docs/img/slagalica-logo.jpg" width="50%" />
 
-* [https://sr.m.wikipedia.org/sr-ec/%D0%A2%D0%92_%D1%81%D0%BB%D0%B0%D0%B3%D0%B0%D0%BB%D0%B8%D1%86%D0%B0](https://sr.m.wikipedia.org/sr-ec/%D0%A2%D0%92_%D1%81%D0%BB%D0%B0%D0%B3%D0%B0%D0%BB%D0%B8%D1%86%D0%B0)
+* [https://sr.m.wikipedia.org/sr-ec/TV_slagalica](https://sr.m.wikipedia.org/sr-ec/TV_slagalica)
 
 ### Slagalica algorithm 
 
@@ -136,21 +136,21 @@ In the TV game show called "Slagalica", there is a game near the end with the na
 
 The "Ko zna zna" game begins usually in the last third of the show. So we can immediately skip the first half of the video. Then we need to figure out how to find the game start. 
 
-##### After 106. season
-Starting from the 106. season (starting from `4.5.2018`), the game intro for the "Ko zna zna" is played on the full screen just before the game. 
+##### After 106th season
+Starting from the 106th season (starting from `4.5.2018`), the game intro for the "Ko zna zna" is played on the full screen just before the game. 
 
 Game intro:
 
 <img src="./docs/img/slagalica-nova-ko-zna-zna-1080p.png" width="55%" height="55%"/>
 
-The easy thing to do was to create a template to match:
+The easy thing to do was to create a template (smaller image based on the full frame) to match:
 
 <img src="./docs/img/slagalica-nova-ko-zna-zna-template-1080p.png" width="55%" height="55%"/>
 
 
 Using OpenCV you can try to find a template in the image, and the OpenCV will return the confidence level, i.e. how similar are both of the images. By using some kind of threshold (e.g. if the similarity is above `0.5`), it is trivial to find the game start with this logic.
 
-If you don't wanna process the video until the end, game end is also needed. Sure, you can have a condition if 10 questions are found to end immediately, but sometimes, not all 10 questions will be found (sometimes TV show editor cuts to the next game before showing the last question e.g. episode from `14.11.2018.`).
+To save the processing time, next game intro should also be found and be used as a game end. Sure, you can have a condition if 10 questions are found to end immediately, but sometimes, not all 10 questions will be found (sometimes TV show editor cuts to the next game before showing the last question e.g. episode from `14.11.2018.`).
 
 Using the same logic as for the game intro, you can find the game outro (game end). And one game end is for another game the beginning mindblown.gif. :) So, by using this reference Game intro (the game after the main one):
 

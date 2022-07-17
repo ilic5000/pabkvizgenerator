@@ -164,8 +164,8 @@ and with the template:
 
 You can find the next game intro, which is surely the previous game's end.
 
-##### Before 106. season 
-Before 106. season (before `4.5.2018`) the game intro was played on the big screen behind the TV show hosts. So this straightforward way of matching templates cannot work just as well as after 106. season episodes. 
+##### Before 106th season 
+Before 106th season (before `4.5.2018`) the game intro was played on the big screen behind the TV show hosts. So this straightforward way of matching templates cannot work just as well as after 106th season episodes. 
 
 <img src="./docs/img/slagalica-stara-ko-zna-zna-intro-example.png" width="70%"/>
 
@@ -175,9 +175,12 @@ TODO: Instead of template matching, use pink mask + contour matching with an are
 Now that we have the game start frame, we need to find the very first frame after that where the question rectangle is visible. Traditionally, the game has a rectangle-shaped area where questions and answers are shown.
 
 The frame showing this area with question and answer:
+
 <img src="./docs/img/question-frame-example.jpg" width="70%"/>
 
-And if we know that area is the same proportions at the bottom of the frame, we can extract this section for easier processing. We can split it to answer questions. These are the seek borders:
+And if we know that this area is always in the same place, and with the same dimensions/proportions, always at the bottom of the frame, we can filter out the rest of the frame, and use only this section for easier processing. We can split it to answer and questions parts. 
+
+By creating filtered out area, we have created our "seek area", and the borders for this area are marked in the image bellow:
 
 <img src="./docs/img/question-frame-example-seek-area.jpg" width="70%"/>
 

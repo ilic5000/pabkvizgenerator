@@ -75,10 +75,10 @@ Before we start with the algorithm explanation, requirements, and how-to-use gui
 ### Slagalica questions/answers
 Note: Episodes used `2019.11.02` to `2022.07.14` todo:
 
-### Potera questions answers
+### Potera
 Note: Episodes used YT channels... todo
 
-### Potjera questions answers
+### Potjera
 Note: Episodes used YT channels... todo
 
 ## Algorithm

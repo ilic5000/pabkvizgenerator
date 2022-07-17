@@ -509,6 +509,7 @@ Arguments:
 4. `slagalica-single-video.py` script where actual processing of video file is done. Batch script is calling this script for every file in the directory.
 5. `slagalica-z-image-diff-test.py` debugging tool used to find differences between two images
 6. `slagalica-z-treshold-finder.py` debugging tool for finding correct values for global thresholding
+7. `slagalica-z-file-renamer.py` small script designed for renaming batch of files with custom template matching - needed because Slagalica episodes were not alphabetically sorted due to the Serbian datetime culture (i.e. 21.06.2020 -> 2020.06.21)
 
 
 

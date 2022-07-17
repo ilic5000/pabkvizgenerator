@@ -10,10 +10,10 @@ pytesseract.pytesseract.tesseract_cmd = r'C:\Program Files\Tesseract-OCR\tessera
 # Configuration ##################################################
 
 fileDir = 'examples'
-#fileName = 'Screenshot_2.png'
-fileName = 'question-frame-example.jpg'
+fileName = '{image-file-name}'
 filePath = "%s/%s"%(fileDir,fileName)
 
+# Use tesseract by default
 forceEasyOCR = False
 
 writeDebugInfoOnImages = True
@@ -28,10 +28,10 @@ font = cv2.FONT_HERSHEY_COMPLEX
 
 # Easy OCR language (either latin or cyrillic, cannot do both at the same time), 'en' is always added alongside one of these
 #ocrLanguage = 'rs_latin'
-ocrLanguage = 'rs_cyrillic'
+easyOcrLanguage = 'rs_cyrillic'
 
 # pytesseract
-# 'srp', 'srp_latn'
+pytesseractLang = 'srp+srp_latn'
 
 ###############################################################################################
 
@@ -142,7 +142,6 @@ def preprocessBeforeOCR(imageToProcess, lower_bound, upper_bound, type, useGauss
 
     return result
 
-
 def unsharp_mask(image, kernel_size=(5, 5), sigma=1.0, amount=1.0, threshold=0):
     """Return a sharpened version of the image, using an unsharp mask."""
     blurred = cv2.GaussianBlur(image, kernel_size, sigma)
@@ -164,17 +163,18 @@ def easyOCR(reader, image):
     return ocrQuestion
 
 def pytesseractOCR(image):
-    recognizedText = pytesseract.image_to_string(image, lang='srp+srp_latn')
+    recognizedText = pytesseract.image_to_string(image, lang=pytesseractLang)
     recognizedText = removeNewlines(recognizedText)
 
     return recognizedText
 
+######################################################################################
 # Start processing...
 
 # Load model into the memory
 reader = None
 if forceEasyOCR:
-    reader = easyocr.Reader(['en', ocrLanguage], gpu=False)
+    reader = easyocr.Reader(['en', easyOcrLanguage], gpu=False)
 
 cv2.namedWindow("HSVTrackbarsBlue")
 cv2.createTrackbar("Lower-H", "HSVTrackbarsBlue", 100, 180, nothing)
@@ -196,7 +196,6 @@ image = unsharp_mask(image)
 hsvImage = cv2.cvtColor(image, cv2.COLOR_BGR2HSV)
 
 while True:
-    
     # must be in the loop (reload empty image/frame)
     original_img_preview = cv2.resize(image, (0, 0), fx=resizeImagePercentage, fy=resizeImagePercentage)
     original_img_previewHeight, original_img_previewWidth, channels = original_img_preview.shape 

@@ -33,7 +33,6 @@ image = cv2.imread(fileName1)
 
 #cv2.waitKey()
 
-
 cv2.namedWindow("tresholdTrackbars")
 cv2.createTrackbar("lower_global_treshold", "tresholdTrackbars", 241, 255, nothing)
 cv2.createTrackbar("upper_global_treshold", "tresholdTrackbars", 255, 255, nothing)

@@ -6,7 +6,7 @@ import easyocr
 
 # Configuration ##################################################
 
-fileName = ''
+fileName = '{image-path}'
 
 writeDebugInfoOnImages = False
 preprocessImageBeforeOCR = False
@@ -15,7 +15,7 @@ resizeImagePercentage = 0.5
 
 font = cv2.FONT_HERSHEY_COMPLEX
 
-# OCR language (either latin or cyrillic, cannot do both at the same time)
+# Easy OCR language (either latin or cyrillic, cannot do both at the same time)
 #ocrLanguage = 'rs_latin'
 ocrLanguage = 'rs_cyrillic'
 

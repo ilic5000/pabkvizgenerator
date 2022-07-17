@@ -14,7 +14,7 @@ pytesseract.pytesseract.tesseract_cmd = r'C:\Program Files\Tesseract-OCR\tessera
 
 # Hardcoded values 
 
-defaultFilePath = '2020.09.02 Slagalica.mp4'
+defaultFilePath = '{video-file-name}'
 
 # Template image to use will be, if set to None, decided based on video dimensions, 
 # however, you can hard-code it here to force the template you want

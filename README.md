@@ -56,17 +56,15 @@ Table of Contents
 There are two main reasons for doing this project.
 
 #### Reason #1
-In the last couple of years, the pub quiz scene in Serbia has seen a rise in popularity. After doing a bit of research and after being a part of the scene myself, I saw that a lot of questions are recycled and that it would be nice if there was some kind of a "knowledge database" where you can test yourself and perhaps prepare yourself for the quizzes. 
+In the last couple of years, the pub quiz scene in Serbia has seen a rise in popularity. After doing a bit of research and after competing myself in some of the quizzes, I saw that a lot of questions are recycled and that it would be nice if there was some kind of a "knowledge database" where you can test yourself and perhaps prepare yourself for the quizzes. 
 
 To my surprise, I found that there are only a couple of popular mobile/browser games that mimicks popular games from the TV shows, but are very limited when it comes to the actual distinct number of questions that they have in their databases. 
 
-I found that a lot of questions used in the pub quizzes are from TV game shows, so, naturally, I started watching the episodes of Slagalica (Serbian), Potera (Serbian), and Potjera (Croatian), however, that took too long. Episodes of Slagalica are 22mins and Potera (eng. The Chase) is more than 40mins long. And the most fun games in both of them are games where you can directly test your knowledge - in Slagalica game is called "Ko zna zna" and in Potera, I think it's called "the second game :D". 
+I found that a lot of questions used in the pub quizzes are from TV game shows, so, naturally, I started watching the episodes of Slagalica (Serbian), Potera (Serbian), and Potjera (Croatian), however, that took too long. Episodes of Slagalica are 22mins and Potera (eng. The Chase) is more than 40mins long. And the most fun games in both of them are games where you can directly test your knowledge - in Slagalica game is called "Ko zna zna" and in Potera, I think it does not have a name officialy, it's always being referred to as a "second game" :). 
 
 So after giving it some thought, I decided to create a program that will go through the episodes, find the games, extract the questions, find the answers and put all of that in some spreadsheet-friendly format such as ".csv". 
 
 After a couple of days, this is the project that I come up with. 
-
-Enjoy and use/distribute freely.
 
 #### Reason #2
 Learn something new. I've never, not since college anyway, done any computer vision work, and I didn't have any experience with OCRs too. So it was a really nice opportunity to venture into the unknown.
@@ -77,7 +75,10 @@ Before we start with the algorithm explanation, requirements, and how-to-use gui
 ### Slagalica questions/answers
 Note: Episodes used `2019.11.02` to `2022.07.14` todo:
 
-### Pot(j)era questions answers
+### Potera questions answers
+Note: Episodes used YT channels... todo
+
+### Potjera questions answers
 Note: Episodes used YT channels... todo
 
 ## Algorithm

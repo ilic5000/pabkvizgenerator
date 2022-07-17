@@ -14,7 +14,7 @@ pytesseract.pytesseract.tesseract_cmd = r'C:\Program Files\Tesseract-OCR\tessera
 
 # Hardcoded values 
 
-defaultFilePath = '{video-file-name}'
+defaultVideoFileToUse = '{video-file-name}'
 
 # Template image to use will be, if set to None, decided based on video dimensions, 
 # however, you can hard-code it here to force the template you want
@@ -56,7 +56,7 @@ parser = argparse.ArgumentParser(description="Slagalica single video processor",
                                  formatter_class=argparse.ArgumentDefaultsHelpFormatter)
 
 parser.add_argument("-srcdir", "--srcDirectory", help="directory where file is located", default="examples")
-parser.add_argument("-file", "--fileName", help="video file name to be processed", default=defaultFilePath)
+parser.add_argument("-file", "--fileName", help="video file name to be processed", default=defaultVideoFileToUse)
 parser.add_argument("-o", "--output", help="directory for csv and debug data output", default="results")
 parser.add_argument("-lang", "--language", help="ocr language, can be either rs_latin or rs_cyrillic", default="rs_cyrillic")
 parser.add_argument("-csv", "--csvFileName", help="name for csv file", default="questions.csv")

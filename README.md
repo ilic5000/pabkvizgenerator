@@ -206,7 +206,7 @@ if we apply the blue mask and transform it to grayscale (black and white), we ge
 
 As you can see, all of the desired blue shade in the image is white. And the image does not have the logo in the background of the question, which helps us a lot with the thing we will try to do next.
 
-The Blue mask image is good and all, however, what can we do with that info? Well, by looking at the blue rectangle question image, if you are familiar with the computer vision, the logical thing to do is to try to form a rectangle in this image. And we can do this by trying to find all of the contours (shapes) in this image. As you can expect, there will be a lot of shapes, however, we can approximate the shapes (make them with fewer shapes).
+The Blue mask image is good and all, however, what can we do with that info? Well, by looking at the blue rectangle question image, if you are familiar with the computer vision, the logical thing to do is to try to form a rectangle in this image. And we can do this by trying to find all of the contours (shapes) in this image. As you can expect, there will be a lot of shapes, however, we can approximate the shapes (make them with fewer points, and thus making them simpler). By doing this, we can get simple shapes such as squares, rectangles etc.
 
 Example of approximation of the shapes (original image, approximation, and direct contour/shape)
 
@@ -263,7 +263,7 @@ without answer:
 <img src="./docs/img/question-frame-example-answer-empty-processed.jpg" width="70%"/>
 
 
-And now if we count the white pixels in images, and if we choose some kind of threshold (e.g. "400" pixels), we can compare two successive frames and figure out if there was a significant change in the frames. If change exists, that means that either answer or empty is now visible. And if we keep track of these changes, we can easily figure out when there is a question and when is an empty image (keep in mind that we need to process each question separately)
+And now if we count the white pixels in images, and if we choose some kind of threshold (e.g. "400" pixels), we can compare two successive frames and figure out if there was a significant change in the frames. If change exists, that means that either answer or empty is now visible. And if we keep track of these changes, we can easily figure out when there is a question and when is an empty image (keep in mind that we need to process each question separately).
 
 #### OCR processing of the frames with question and answers
 
@@ -293,7 +293,7 @@ If we do the sanitization, we finally get:
 
 `КОЈИ БРАЗИЛАЦ ЈЕ ЈЕДИНИ ФУДБАЛЕР У ИСТОРИЈИ КОЈИ ЈЕ ОСВОЈИО ТРИ СВЕТСКА ПРВЕНСТВА?`
 
-The answer is pretty straightforward now, but we need to keep in mind that "2" in the answer can be the actual number two. So, for the answer, we should skip "2" -> "?" sanitization.
+To obtain the answer, the process is pretty straightforward now, but we need to keep in mind that "2" in the answer can be the actual number two. So, for the answer, we should skip "2" -> "?" sanitization.
 
 Answer:
 
@@ -321,7 +321,7 @@ Answer: СЕДАТИВ
 
 <img src="./docs/img/potera-logo.jpg" width="32.5%" /> <img src="./docs/img/potjera-logo.jpg" width="30%"/>
 
-* https://sr.m.wikipedia.org/sr-el/%D0%9F%D0%BE%D1%82%D0%B5%D1%80%D0%B0_(%D0%BA%D0%B2%D0%B8%D0%B7)
+* https://sr.m.wikipedia.org/sr-el/Potera)
 * https://hr.wikipedia.org/wiki/Potjera_(kviz)
 * https://en.wikipedia.org/wiki/The_Chase_(British_game_show)
 

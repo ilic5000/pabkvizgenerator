@@ -206,7 +206,7 @@ if we apply the blue mask and transform it to grayscale (black and white), we ge
 
 As you can see, all of the desired blue shade in the image is white. And the image does not have the logo in the background of the question, which helps us a lot with the thing we will try to do next.
 
-The Blue mask image is good and all, however, what can we do with that info? Well, we are looking at the blue rectangle question image, the logical thing to do is to try to form a rectangle in this image. And we can do this by trying to find all of the contours (shapes) in this image. As you can expect, there will be a lot of shapes, however, we can approximate the shapes and make them with fewer shapes.
+The Blue mask image is good and all, however, what can we do with that info? Well, by looking at the blue rectangle question image, if you are familiar with the computer vision, the logical thing to do is to try to form a rectangle in this image. And we can do this by trying to find all of the contours (shapes) in this image. As you can expect, there will be a lot of shapes, however, we can approximate the shapes (make them with fewer shapes).
 
 Example of approximation of the shapes (original image, approximation, and direct contour/shape)
 

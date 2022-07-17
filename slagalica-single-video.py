@@ -14,7 +14,7 @@ pytesseract.pytesseract.tesseract_cmd = r'C:\Program Files\Tesseract-OCR\tessera
 
 # Hardcoded values 
 
-defaultFilePath = '2019.11.11 Slagalica.mp4'
+defaultFilePath = '2020.09.02 Slagalica.mp4'
 
 # Template image to use will be, if set to None, decided based on video dimensions, 
 # however, you can hard-code it here to force the template you want
@@ -425,8 +425,9 @@ while success:
             iterationStepChanged = True
 
         questionRectangleImage = originalFrame[seekAreaQuestionBorderUpperLineY:seekAreaQuestionBorderLowerLineY, seekAreaBorderLeftX:seekAreaBorderRightX].copy()
-        cv2.imshow('Question rectangle', questionRectangleImage)
-        cv2.waitKey(1)
+        if showtimeMode:
+            cv2.imshow('Question rectangle', questionRectangleImage)
+            cv2.waitKey(1)
         answerRectangleImage = originalFrame[seekAreaQuestionBorderLowerLineY:seekAreaAnswerBorderLowerLineY, seekAreaBorderLeftX:seekAreaBorderRightX].copy()
 
         questionFrameVisible = isQuestionsFrameVisible(percentageOfAreaThreshold, blue_l_h, blue_l_s, blue_l_v, blue_u_h, blue_u_s, blue_u_v, questionRectangleImage)

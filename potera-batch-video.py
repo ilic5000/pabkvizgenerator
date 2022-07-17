@@ -49,7 +49,9 @@ for file in videoFiles:
         print(e)
         
     i+=1
+    currentTime = '{}'.format(datetime.now() - start_time)
+    print("Current cumulative batch processing duration: %s" %currentTime)
     print("***********************************************************************************")
 
 currentTime = 'Time: {}'.format(datetime.now() - start_time)
-print("Batch processing finished. Duration: %s" %currentTime)
+print("Batch processing finished. Total Duration: %s" %currentTime)

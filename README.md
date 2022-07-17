@@ -10,22 +10,46 @@ Table of Contents
 
 * [Anansi - TV game show crawler](#anansi-tv-game-show-crawler)
    * [Idea & Motivation](#idea-&-motivation)
-        * [Reason #1](#reason-#1)
-        * [Reason #2](#reason-#2)
-   * [Slagalica crawler example run](#slagalica-crawler-example-run)
-    * [Idea & Motivation](#idea-&-motivation)
-        * [Reason #1](#reason-#1)
-        * [Reason #2](#reason-#2)
-   * [Slagalica crawler example run](#slagalica-crawler-example-run)
-    * [Idea & Motivation](#idea-&-motivation)
-        * [Reason #1](#reason-#1)
-        * [Reason #2](#reason-#2)
-   * [Slagalica crawler example run](#slagalica-crawler-example-run)
-    * [Idea & Motivation](#idea-&-motivation)
-        * [Reason #1](#reason-#1)
-        * [Reason #2](#reason-#2)
-   * [Slagalica crawler example run](#slagalica-crawler-example-run)
-TODO
+        * [Reason #1](#reason-1)
+        * [Reason #2](#reason-2)
+    * [Results - extracted questions & answers](#results-extracted-questions-&-answers)
+        * [Slagalica questions/answers]()
+        * [Pot(j)era questions answers]()
+    * [Algorithm]()
+        * [General idea]()
+        * [Slagalica]()
+            * [Slagalica pseudo algorithm]()
+            * [Slagalica TV game show]()
+            * [Slagalica algorithm]()
+            * [Rules of the game]()
+            * [Finding the beginning and the end of the game]()
+                * [After 106. season]()
+                * [Before 106. season]()
+            * [Finding the frame with question]()
+            * [OCR processing of the frames with question and answers]()
+            * [Slagalica crawler example run]()
+        * [Pot(j)era]()
+            * [Pot(j)era pseudo algorithm]()
+            * [Pot(j)era algorithm]()
+            * [Rules of the game]()
+            * [Finding the green box with the correct answer]()
+            * [OCR processing of the frames with question and answers]()
+            * [Potera crawler example run]()
+    * [Optimization ideas]()
+    * [Future Roadmap]()
+    * [Known problems]()
+    * [How to run scripts locally]()
+        * [Script Requirements]()
+            * [Pot(j)era requirements]()
+            * [Slagalica requirements]()
+            * [Pytesseract on Windows]()
+        * [Main scripts]()
+        * [Additional helper scripts]()
+    * [Miscellaneous]()
+        * [Where to find TV show episodes?]()
+            * [Slagalica]()
+            * [Potera]()
+            * [Potjera]()
 
 ## Idea & Motivation
 
@@ -47,8 +71,6 @@ Enjoy and use/distribute freely.
 #### Reason #2
 Learn something new. I've never, not since college anyway, done any computer vision, and I didn't have any experience with OCRs. So it was a nice opportunity to venture into the unknown.
 
-
-
 ## Results - extracted questions & answers
 Before we start with the algorhitm explanation, requirements and how to use guides, here is a full version of all the extracted questions & answers of the game shows.
 
@@ -57,7 +79,6 @@ Note: Episodes used `2019.11.02` to `2022.07.14` todo:
 
 ### Pot(j)era questions answers
 Note: Episodes used yt channels... todo
-
 
 ## Algorithm
 The following is the section explaining how everything works under the hood.
@@ -127,7 +148,6 @@ Using OpenCV you can try to find a template in the image, and the OpenCV will re
 
 If you don't wanna process the video until the end, game end is also needed. Sure, you can have a condition if 10 questions are found to end immediately, but sometimes, not all 10 questions will be found (sometimes TV show editor cuts to the next game before showing last question e.g. episode from `14.11.2018.`).
 
-
 Using the same logic as for game intro, you can find the game outro (game end). And one game end is for another game the beginning mindblown.gif. :) So, by using this reference Game intro (the game after the main one):
 
 <img src="./docs/img/slagalica-nova-asoc-1080p.png" width="55%" height="55%"/>
@@ -187,7 +207,6 @@ Now, if we try to find contour, then do the aproximation on our blue mask image,
 
 We have something that looks like a rectangle, and remember, this rectangle is based on blue mask in the section where question should appear. In order to trigger the condition that question is visible, we need to have some kind of threshold (e.g. if shape is taking up the 70% of the image) for the area of this found shape, and if it goes above it, then the question frame is visible. The area threshold should not be hard-coded, but the percentage of the total area of pixels, in order to be scalable for different resolutions.
 
-#### Finding the frame with question
 When the very first question frame has been found, the answer will not be visible.
 
 Question area will be:
@@ -241,7 +260,6 @@ Now for the fun part :)
 
 We've successfuly figured out a way to find all questions and answers, but now we need to extract the questions in some kind of text document for easier processing later on. There are many different OCR solutions out there, that are using trained neural net models for recognizing the content. EasyOCR is really easy to use, however, even though I used it in Pot(j)era (spoiler alert), cyrillic letters in the font used on Slagalica is returning really bad results. So, for OCR, I am using the one that actually recognizes this font, and probably the most famous out there - `tesseract`. However, I am using python wrapper called `pytesseract` for easier and simpler usage. 
 
-
 During my experiments, I've found that tesseract works a lot better if you preprocess the images and prepare them for OCR. For example, convert them to grayscale, remove noise, apply erode (thin the objects a little bit etc.). You can find the techniques I did before using OCR in the source code. It was really a trial and error process, I guess that my preproccesing that I did will not work universally, but in these really narrow and expected test cases, it worked flawlessly.
 
 Preprocess examples:
@@ -264,7 +282,7 @@ If we do the sanitization, we finally get:
 
 `КОЈИ БРАЗИЛАЦ ЈЕ ЈЕДИНИ ФУДБАЛЕР У ИСТОРИЈИ КОЈИ ЈЕ ОСВОЈИО ТРИ СВЕТСКА ПРВЕНСТВА?`
 
-The answer is pretty forward now, but we need to keep in mind that "2" in the answer can be the actuall number. So, for answer we should skip "2" -> "?" sanitization.
+The answer is pretty straightforward now, but we need to keep in mind that "2" in the answer can be the actual number. So, for answer we should skip "2" -> "?" sanitization.
 
 Answer:
 
@@ -280,17 +298,17 @@ Now when you know how everything works, here is a recording of the processing of
 
 <img src="./docs/img/slagalica-example-run.gif" width="100%"/>
 
-`
+```
 #1 Question: КОЈИМ ЛАТИНСКИМ ИМЕНОМ НА СЛОВО "С" НАЗИВАМО СРЕДСТВО ЗА СМИРЕЊЕ?
-Answer: СЕДАТИВ
-`
 
+Answer: СЕДАТИВ
+```
 
 ### Pot(j)era TV game show
 
 <img src="./docs/img/potera-logo.jpg" width="32.5%" /> <img src="./docs/img/potjera-logo.jpg" width="30%"/>
 
-* https://sr.m.wikipedia.org/sr-ec/%D0%9F%D0%BE%D1%82%D0%B5%D1%80%D0%B0_(%D0%BA%D0%B2%D0%B8%D0%B7)
+* https://sr.m.wikipedia.org/sr-el/%D0%9F%D0%BE%D1%82%D0%B5%D1%80%D0%B0_(%D0%BA%D0%B2%D0%B8%D0%B7)
 * https://hr.wikipedia.org/wiki/Potjera_(kviz)
 * https://en.wikipedia.org/wiki/The_Chase_(British_game_show)
 
@@ -335,11 +353,9 @@ In order to find the green box, we can use the same logic as for finding the blu
 
 To avoid false positives, we can then apply the same logic, but this time with the blue mask, to find, in the same frame, the large rectangle with the question. 
 
-
 Consider this frame:
 
 <img src="./docs/img/potera-question-frame.jpg" width="70%"/>
-
 
 If we apply green mask (range of the green was a trial and error process) we, get something like this:
 
@@ -348,7 +364,6 @@ If we apply green mask (range of the green was a trial and error process) we, ge
 blue mask:
 
 <img src="./docs/img/potera-blue-mask.png" width="70%"/>
-
 
 and here are contours/shapes found in the green/blue masks. Please notice the orange seek area limits - by using these limits, we can discard all the points (red x,y coordinates) of the shapes that do not belong inside
 
@@ -359,7 +374,6 @@ If both the green rectangle and the big blue one are visible in the same frame, 
 But before OCR section, here is a recording of the simple tool that I created for finding good HSV values for blue and green mask.
 
 <img src="./docs/img/potera-single-image-example-run.gif" width="100%"/>
-
 
 #### OCR processing of the frames with question and answers
 
@@ -388,7 +402,6 @@ EasyOCR: `Б Ресава`
 
 
 We can also try tesseract, instead of EasyOCR, but honestly, there is no need. EasyOCR has proven to be really good for Potera OCR.
-
 
 ### Potera crawler example run
 

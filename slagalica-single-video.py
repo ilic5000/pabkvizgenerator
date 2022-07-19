@@ -14,12 +14,18 @@ pytesseract.pytesseract.tesseract_cmd = r'C:\Program Files\Tesseract-OCR\tessera
 
 # Hardcoded values 
 
-defaultVideoFileToUse = '{video-file-name}'
+defaultVideoFileToUse = '2018.05.04 Slagalica.mp4'
 
 # Template image to use will be, if set to None, decided based on video dimensions, 
 # however, you can hard-code it here to force the template you want
 templateToFindGameIntroImagePath = None
 templateToFindNextGameIntroImagePath = None
+
+# Global threshold lower and upper bounds for preproccesing image before OCR
+questionLowerBoundGlobalTreshold = 190
+questionUpperBoundGlobalTreshold = 255
+answerLowerBoundGlobalTreshold = 190
+answerUpperBoundGlobalTreshold = 255
 
 # Fallbacks to default values based on video resolution 
 # if not set (value should be something between 0.0 and 1.0)
@@ -90,11 +96,11 @@ templateToFindNextGameIntro1080pImagePath = 'resources/slagalica/slagalica-nova-
 
 # 0.4 is good for 1080p, 0.7 for 720p
 thresholdConfidenceLevelTemplateMatchingDesiredGameIntro1080p = 0.4
-thresholdConfidenceLevelTemplateMatchingDesiredGameIntro720p = 0.7
+thresholdConfidenceLevelTemplateMatchingDesiredGameIntro720p = 0.5
 
 # 0.6 is good for 1080p, 0.9 for 720p
 thresholdConfidenceLevelTemplateMatchingNextGameIntro1080p = 0.6
-thresholdConfidenceLevelTemplateMatchingNextGameIntro720p = 0.9
+thresholdConfidenceLevelTemplateMatchingNextGameIntro720p = 0.8
 
 # CSV config
 csvResultsFileLocation = "%s/%s" %(directoryOutput, csvFileName)
@@ -242,15 +248,24 @@ def pytesseractOCR(image, handleIncorrectQuestionMarkAtTheEnd):
     recognizedText = recognizedText.replace('\n',' ')
     recognizedText.replace("  ", " ")
     recognizedText = recognizedText.strip('_')
+    recognizedText = recognizedText.strip('—')
     recognizedText = recognizedText.strip()
     recognizedText = " ".join(recognizedText.split())
     recognizedText = recognizedText.upper()
+    recognizedText = recognizedText.replace("“\"",'\"')
 
     if handleIncorrectQuestionMarkAtTheEnd:
         # ? character is recognized as number "2", probably font used is the problem
         recognizedText = recognizedText.rstrip('2')
         recognizedText = recognizedText.rstrip(':2')
         recognizedText = "%s%s" %(recognizedText, '?')
+        recognizedText = recognizedText.replace("7?",'?')
+        recognizedText = recognizedText.replace(">?",'?')
+        recognizedText = recognizedText.replace("%?",'?')
+        recognizedText = recognizedText.replace(" ?",'?')
+        recognizedText = recognizedText.replace("7?",'?')
+        recognizedText = recognizedText.replace("??",'?')
+        recognizedText = recognizedText.replace(" _ ",' ')
 
     return recognizedText
 
@@ -318,14 +333,14 @@ success,originalFrame = videoFile.read()
 # Create seek area (a lot easier to find shapes and avoid false detections on unimportant parts of the image)
 imageHeight, imageWidth, _ = originalFrame.shape 
 
-seekAreaQuestionBorderUpperLineY = int(5.85 * int(imageHeight/10))
-seekAreaQuestionBorderLowerLineY = int(8.25 * int(imageHeight/10))
-seekAreaAnswerBorderLowerLineY = int(9.1 * int(imageHeight/10))
+seekAreaQuestionBorderUpperLineY = int(5.95 * int(imageHeight/10))
+seekAreaQuestionBorderLowerLineY = int(8.22 * int(imageHeight/10))
+seekAreaAnswerBorderLowerLineY = int(9.0 * int(imageHeight/10))
 
-seekAreaBorderLeftX = int(imageWidth/10)
+seekAreaBorderLeftX = int(1.13 * imageWidth/10)
 seekAreaBorderLeftY = seekAreaAnswerBorderLowerLineY
 
-seekAreaBorderRightX = int(8.2 * int(imageWidth/9.1))
+seekAreaBorderRightX = int(8.1 * int(imageWidth/9.1))
 seekAreaBorderRightY = seekAreaAnswerBorderLowerLineY
 
 # Calculate area of found shapes tresholds
@@ -476,11 +491,15 @@ while success:
                 cv2.imwrite(debugFrameName, answerRectangleImage)
 
             if preprocessImageBeforeOCR:
-                questionRectangleImage = preprocessGetReadyForOCR(questionRectangleImage.copy(), lower_bound=222, upper_bound=255, 
+                questionRectangleImage = preprocessGetReadyForOCR(questionRectangleImage.copy(), lower_bound=questionLowerBoundGlobalTreshold, upper_bound=questionUpperBoundGlobalTreshold, 
                                                                      type=cv2.THRESH_BINARY, useGaussianBlurBefore=True, useBlurAfter=True)
                 
-                answerRectangleImage = preprocessGetReadyForOCR(answerRectangleImage.copy(), lower_bound=241, upper_bound=255, 
+                answerRectangleImage = preprocessGetReadyForOCR(answerRectangleImage.copy(), lower_bound=answerLowerBoundGlobalTreshold, upper_bound=answerUpperBoundGlobalTreshold, 
                                                                      type=cv2.THRESH_BINARY, useGaussianBlurBefore=True, useBlurAfter=True)
+
+            if showtimeMode:
+                cv2.imshow('Question before OCR:', questionRectangleImage.copy())
+                cv2.imshow('Answer before OCR:', answerRectangleImage.copy())
 
             if forceUseOfEasyOCR:
                 ocrQuestion = easyOCR(reader, questionRectangleImage)

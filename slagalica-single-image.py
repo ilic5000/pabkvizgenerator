@@ -10,7 +10,7 @@ pytesseract.pytesseract.tesseract_cmd = r'C:\Program Files\Tesseract-OCR\tessera
 # Configuration ##################################################
 
 fileDir = 'examples'
-fileName = '{image-file-name}'
+fileName = '2018.05.04 Slagalica.mp4-q1-22241-0-frame-original.jpg'
 filePath = "%s/%s"%(fileDir,fileName)
 
 # Use tesseract by default
@@ -200,23 +200,23 @@ while True:
     original_img_preview = cv2.resize(image, (0, 0), fx=resizeImagePercentage, fy=resizeImagePercentage)
     original_img_previewHeight, original_img_previewWidth, channels = original_img_preview.shape 
 
-    seekAreaQuestionBorderUpperLineY = int(5.85 * int(original_img_previewHeight/10))
-    seekAreaQuestionBorderLowerLineY = int(8.25 * int(original_img_previewHeight/10))
-    seekAreaAnswerBorderLowerLineY = int(9.1 * int(original_img_previewHeight/10))
+    seekAreaQuestionBorderUpperLineY = int(5.95 * int(original_img_previewHeight/10))
+    seekAreaQuestionBorderLowerLineY = int(8.22 * int(original_img_previewHeight/10))
+    seekAreaAnswerBorderLowerLineY = int(9.0 * int(original_img_previewHeight/10))
 
-    seekAreaBorderLeftX = int(original_img_previewWidth/10)
+    seekAreaBorderLeftX = int(1.13 * original_img_previewWidth/10)
     seekAreaBorderLeftY = seekAreaAnswerBorderLowerLineY
 
-    seekAreaBorderRightX = int(8.2 * int(original_img_previewWidth/9.1))
+    seekAreaBorderRightX = int(8.1 * int(original_img_previewWidth/9.1))
     seekAreaBorderRightY = seekAreaAnswerBorderLowerLineY
 
     if writeDebugInfoOnImages:
-        cv2.line(original_img_preview, (seekAreaBorderLeftX, seekAreaQuestionBorderUpperLineY), (seekAreaBorderRightX, seekAreaQuestionBorderUpperLineY), (0, 255, 0), thickness=2)
-        cv2.line(original_img_preview, (seekAreaBorderLeftX, seekAreaQuestionBorderLowerLineY), (seekAreaBorderRightX, seekAreaQuestionBorderLowerLineY), (0, 255, 255), thickness=2)
-        cv2.line(original_img_preview, (seekAreaBorderLeftX, seekAreaAnswerBorderLowerLineY), (seekAreaBorderRightX, seekAreaAnswerBorderLowerLineY), (0, 255, 0), thickness=2)
+        cv2.line(original_img_preview, (seekAreaBorderLeftX, seekAreaQuestionBorderUpperLineY), (seekAreaBorderRightX, seekAreaQuestionBorderUpperLineY), (0, 255, 0), thickness=1)
+        cv2.line(original_img_preview, (seekAreaBorderLeftX, seekAreaQuestionBorderLowerLineY), (seekAreaBorderRightX, seekAreaQuestionBorderLowerLineY), (0, 255, 255), thickness=1)
+        cv2.line(original_img_preview, (seekAreaBorderLeftX, seekAreaAnswerBorderLowerLineY), (seekAreaBorderRightX, seekAreaAnswerBorderLowerLineY), (0, 255, 0), thickness=1)
         
-        cv2.line(original_img_preview, (seekAreaBorderLeftX, seekAreaQuestionBorderUpperLineY), (seekAreaBorderLeftX, seekAreaBorderLeftY), (0, 255, 0), thickness=2)
-        cv2.line(original_img_preview, (seekAreaBorderRightX, seekAreaQuestionBorderUpperLineY), (seekAreaBorderRightX, seekAreaBorderRightY), (0, 255, 0), thickness=2)
+        cv2.line(original_img_preview, (seekAreaBorderLeftX, seekAreaQuestionBorderUpperLineY), (seekAreaBorderLeftX, seekAreaBorderLeftY), (0, 255, 0), thickness=1)
+        cv2.line(original_img_preview, (seekAreaBorderRightX, seekAreaQuestionBorderUpperLineY), (seekAreaBorderRightX, seekAreaBorderRightY), (0, 255, 0), thickness=1)
 
     questionRectangleImage = original_img_preview[seekAreaQuestionBorderUpperLineY:seekAreaQuestionBorderLowerLineY, seekAreaBorderLeftX:seekAreaBorderRightX].copy()
     answerRectangleImage = original_img_preview[seekAreaQuestionBorderLowerLineY:seekAreaAnswerBorderLowerLineY, seekAreaBorderLeftX:seekAreaBorderRightX].copy()

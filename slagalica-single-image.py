@@ -10,8 +10,8 @@ pytesseract.pytesseract.tesseract_cmd = r'C:\Program Files\Tesseract-OCR\tessera
 # Configuration ##################################################
 
 fileDir = 'examples'
-fileName = '720p-intro1-mask-ready.png'
-fileName2 = '720p-intro2-mask-ready.png'
+fileName = '480p-old-aspect-ratio.jpg'
+fileName2 = '480p-old-aspect-ratio.jpg'
 
 filePath = "%s/%s"%(fileDir,fileName)
 filePath2 = "%s/%s"%(fileDir,fileName2)

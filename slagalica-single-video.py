@@ -14,25 +14,34 @@ pytesseract.pytesseract.tesseract_cmd = r'C:\Program Files\Tesseract-OCR\tessera
 
 # Hardcoded values 
 
-defaultVideoFileToUse = '2018.05.04 Slagalica.mp4'
+defaultVideoFileToUse = ''
+
+# Use either Template matching ("True") or blue-pink mask/contour/area matching ("False")
+# The second one is better for low res video files and images
+gameRecognitionLogicForceTemplateMode = False
+
+# Used only when using mask/contour/area matching logic for game intro recognition
+gameRecognitionIntroThreshold = 0.8 # 1.0 is =width*height (0.8 is good for new game intro, 0.1 is good for old game intro behind tv host)
+gameRecognitionOutroThreshold = 0.8 # 1.0 is =width*height (?)
+
+# When switching between an empty answer rectangle and one with the answer there is a threshold for change detection 
+thresholdInNumberOfPixelsDifferenceInAnswerRectanglePercentage = 0.007 # (1.0 is width * height of the answer rectangle)
+
+# Global threshold lower and upper bounds for preproccesing image before OCR
+questionLowerBoundGlobalTreshold = 188
+questionUpperBoundGlobalTreshold = 255
+answerLowerBoundGlobalTreshold = 188
+answerUpperBoundGlobalTreshold = 255
 
 # Template image to use will be, if set to None, decided based on video dimensions, 
 # however, you can hard-code it here to force the template you want
 templateToFindGameIntroImagePath = None
 templateToFindNextGameIntroImagePath = None
 
-# Global threshold lower and upper bounds for preproccesing image before OCR
-questionLowerBoundGlobalTreshold = 190
-questionUpperBoundGlobalTreshold = 255
-answerLowerBoundGlobalTreshold = 190
-answerUpperBoundGlobalTreshold = 255
-
 # Fallbacks to default values based on video resolution 
 # if not set (value should be something between 0.0 and 1.0)
 thresholdConfidenceLevelTemplateMatchingDesiredGameIntro = None
 thresholdConfidenceLevelTemplateMatchingNextGameIntro = None
-
-thresholdInNumberOfPixelsDifferenceInAnswerRectangle = 500
 
 # Found contours area size treshold (percentage of whole rectangle)
 percentageOfAreaThreshold = 0.6
@@ -193,29 +202,29 @@ def compare_two_images_number_of_pixels(sourceImage, templateToFind):
     difference = abs(number_of_white_pix_img1 - number_of_white_pix_img2)
     return difference
 
-def isQuestionsFrameVisible(percentageOfAreaThreshold, blue_l_h, blue_l_s, blue_l_v, blue_u_h, blue_u_s, blue_u_v, image):
+def isDesiredMaskFrameVisible(percentageOfAreaThreshold, l_h, l_s, l_v, u_h, u_s, u_v, image):
     hsvImage = cv2.cvtColor(image, cv2.COLOR_BGR2HSV).copy()
     questionImgHeight, questionImgWidth, _ = hsvImage.shape 
 
-    blue_lower_hsv = numpy.array([blue_l_h, blue_l_s, blue_l_v])
-    blue_upper_hsv = numpy.array([blue_u_h, blue_u_s, blue_u_v])
-    blue_mask = cv2.inRange(hsvImage, blue_lower_hsv, blue_upper_hsv)
+    lower_hsv = numpy.array([l_h, l_s, l_v])
+    upper_hsv = numpy.array([u_h, u_s, u_v])
+    mask = cv2.inRange(hsvImage, lower_hsv, upper_hsv)
     kernelBlue = numpy.ones((3,3), numpy.uint8)
-    blue_mask = cv2.erode(blue_mask, kernelBlue)
-    contoursInBlueMask, _ = cv2.findContours(blue_mask, cv2.RETR_TREE,  cv2.CHAIN_APPROX_SIMPLE)
+    mask = cv2.erode(mask, kernelBlue)
+    contoursInMask, _ = cv2.findContours(mask, cv2.RETR_TREE,  cv2.CHAIN_APPROX_SIMPLE)
 
     totalPixelsQuestionRectangle = questionImgHeight * questionImgWidth
     areaThreashold = percentageOfAreaThreshold * totalPixelsQuestionRectangle
 
-    maxBlueArea = 0 
-    for cnt in contoursInBlueMask:
+    maxArea = 0 
+    for cnt in contoursInMask:
         area = cv2.contourArea(cnt)
         #approx = cv2.approxPolyDP(cnt, 0.03 * cv2.arcLength(cnt, True), True)
         #numberOfPoints = len(approx)
-        if area > maxBlueArea and area > areaThreashold:
-                maxBlueArea = area
+        if area > maxArea and area > areaThreashold:
+                maxArea = area
 
-    if maxBlueArea > 0:
+    if maxArea > 0:
         return True
     
     return False
@@ -361,6 +370,12 @@ seekAreaBorderRightY = seekAreaAnswerBorderLowerLineY
 totalPixels = imageHeight * imageWidth
 areaThreashold = percentageOfAreaThreshold * totalPixels
 
+# Calculate number of pixels for change detection in the answer rectangle
+answerRectTemp = originalFrame[seekAreaQuestionBorderLowerLineY:seekAreaAnswerBorderLowerLineY, seekAreaBorderLeftX:seekAreaBorderRightX].copy()
+answer_imageHeight, answer_imageWidth, _ = answerRectTemp.shape 
+thresholdInNumberOfPixelsDifferenceInAnswerRectangleValue = int(thresholdInNumberOfPixelsDifferenceInAnswerRectanglePercentage * answer_imageHeight * answer_imageWidth)
+print('Number of pixels for change detection in the answer rectangle: %d' %thresholdInNumberOfPixelsDifferenceInAnswerRectangleValue)
+
 # Get matching template for video resolution
 print('Video dimensions are %dx%d' %(imageWidth, imageHeight))
 
@@ -394,14 +409,17 @@ else: # fallback to 720p values (TODO: add more resolutions perhaps, or make it 
     if thresholdConfidenceLevelTemplateMatchingNextGameIntro is None:
         thresholdConfidenceLevelTemplateMatchingNextGameIntro = thresholdConfidenceLevelTemplateMatchingNextGameIntro720p
 
-print('Using template for intro: %s' %templateToFindGameIntroImagePath)
-print('Using threshold for intro: %s' %thresholdConfidenceLevelTemplateMatchingDesiredGameIntro)
-print('Using template for outro: %s' %templateToFindNextGameIntroImagePath)
-print('Using threshold for outro: %s' %thresholdConfidenceLevelTemplateMatchingNextGameIntro)
-print()
-
-templateToFindGameIntro = cv2.imread(templateToFindGameIntroImagePath, 0)
-templateToFindNextGameIntro = cv2.imread(templateToFindNextGameIntroImagePath, 0)
+if gameRecognitionLogicForceTemplateMode:
+    templateToFindGameIntro = cv2.imread(templateToFindGameIntroImagePath, 0)
+    templateToFindNextGameIntro = cv2.imread(templateToFindNextGameIntroImagePath, 0)
+    print('Using template for intro: %s' %templateToFindGameIntroImagePath)
+    print('Using threshold for intro: %s' %thresholdConfidenceLevelTemplateMatchingDesiredGameIntro)
+    print('Using template for outro: %s' %templateToFindNextGameIntroImagePath)
+    print('Using threshold for outro: %s' %thresholdConfidenceLevelTemplateMatchingNextGameIntro)
+    print()
+else:
+    print('Using pink/blue masks for game intro/outro recognition...\n')
+    print()
 
 # Get video bitrate for debug purposes
 bitrate = get_bitrate(filePath)
@@ -415,6 +433,7 @@ print("Frame iteration step (game lookup): %d" %howManyFramesToIterateBy)
 numberOfFoundQuestionAnswerPair = 0
 
 gameFound = False
+gameStartFoundInCurrentFrame = False
 iterationStepChanged = False
 questionWithAnswerFrameFound = False
 answerTemp = None
@@ -432,10 +451,17 @@ while success:
     currentTime = 'Duration: {}'.format(datetime.now() - start_time)
     print_progress_bar(frameIndex, videoFileFramesTotalLength, "Frames: ", currentTime)
 
+    #cv2.imwrite("t%d.jpg" %frameIndex, originalFrame)
+
+    if gameRecognitionLogicForceTemplateMode:
+        gameStartFoundInCurrentFrame = match_image_template(originalFrame, templateToFindGameIntro, confidenceLevel = thresholdConfidenceLevelTemplateMatchingDesiredGameIntro)
+    else:
+        gameStartFoundInCurrentFrame = isDesiredMaskFrameVisible(gameRecognitionIntroThreshold, game_intro_pink_mask_l_h, game_intro_pink_mask_l_s, game_intro_pink_mask_l_v, game_intro_pink_mask_u_h, game_intro_pink_mask_u_s, game_intro_pink_mask_u_v, originalFrame.copy())
+
     # MAGIC!
-    if not gameFound and match_image_template(originalFrame, templateToFindGameIntro, confidenceLevel = thresholdConfidenceLevelTemplateMatchingDesiredGameIntro):
+    if not gameFound and gameStartFoundInCurrentFrame:
         gameFound = True
-        print("Game start found. Frame: %d" %frameIndex)
+        print("\nGame start found. Frame: %d" %frameIndex)
         
         if showtimeMode:
             gameFoundFrame = originalFrame.copy()
@@ -459,7 +485,7 @@ while success:
             cv2.waitKey(1)
         answerRectangleImage = originalFrame[seekAreaQuestionBorderLowerLineY:seekAreaAnswerBorderLowerLineY, seekAreaBorderLeftX:seekAreaBorderRightX].copy()
 
-        questionFrameVisible = isQuestionsFrameVisible(percentageOfAreaThreshold, question_mask_blue_l_h, question_mask_blue_l_s, question_mask_blue_l_v, question_mask_blue_u_h, question_mask_blue_u_s, question_mask_blue_u_v, questionRectangleImage)
+        questionFrameVisible = isDesiredMaskFrameVisible(percentageOfAreaThreshold, question_mask_blue_l_h, question_mask_blue_l_s, question_mask_blue_l_v, question_mask_blue_u_h, question_mask_blue_u_s, question_mask_blue_u_v, questionRectangleImage)
 
         answerCurrentPreProccessed = preprocessGetReadyForOCR(answerRectangleImage.copy(), lower_bound=241, upper_bound=255, 
                                                                 type=cv2.THRESH_BINARY, useGaussianBlurBefore=True, useBlurAfter=True).copy()
@@ -476,7 +502,7 @@ while success:
                     cv2.imshow('answerCurrentPreProccessed:', answerCurrentPreProccessed.copy())
                     key = cv2.waitKey(1)
 
-                if diffSimilarityValueNumberOfPixels > thresholdInNumberOfPixelsDifferenceInAnswerRectangle:
+                if diffSimilarityValueNumberOfPixels > thresholdInNumberOfPixelsDifferenceInAnswerRectangleValue:
                     if showtimeMode:
                         answerRectangleImage_preview = cv2.resize(answerRectangleImage, (0, 0), fx=0.2, fy=0.2)
                         cv2.imshow('Change detected found:', answerRectangleImage_preview)
@@ -560,7 +586,13 @@ while success:
         if(numberOfFoundQuestionAnswerPair >= 10):
             print("\nGame end found. 10 Questions reached. Frame: %d" %frameIndex)
             break
-        if(match_image_template(originalFrame, templateToFindNextGameIntro, confidenceLevel = thresholdConfidenceLevelTemplateMatchingNextGameIntro)):
+
+        gameOutroFoundInCurrentFrame = False
+        if gameRecognitionLogicForceTemplateMode:
+            gameOutroFoundInCurrentFrame = match_image_template(originalFrame, templateToFindNextGameIntro, confidenceLevel = thresholdConfidenceLevelTemplateMatchingNextGameIntro)
+        else: 
+            gameOutroFoundInCurrentFrame = isDesiredMaskFrameVisible(gameRecognitionOutroThreshold, game_outro_blue_mask_l_h, game_outro_blue_mask_l_s, game_outro_blue_mask_l_v, game_outro_blue_mask_u_h, game_outro_blue_mask_u_s, game_outro_blue_mask_u_v, originalFrame.copy())
+        if gameOutroFoundInCurrentFrame:
             print("Questions missed: %d" %(10-numberOfFoundQuestionAnswerPair))
             print("Game end found. New game intro recognized. Frame: %d" %frameIndex)
             break

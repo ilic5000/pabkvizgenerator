@@ -50,12 +50,26 @@ frameIterationStepModifierDuringTheGame = 0.3
 
 # HSV masks values 
 # blue mask for question rectangle
-blue_l_h = 100
-blue_l_s = 118
-blue_l_v = 42
-blue_u_h = 120
-blue_u_s = 255
-blue_u_v = 210
+question_mask_blue_l_h = 100
+question_mask_blue_l_s = 118
+question_mask_blue_l_v = 42
+question_mask_blue_u_h = 120
+question_mask_blue_u_s = 255
+question_mask_blue_u_v = 210
+
+game_intro_pink_mask_l_h = 132
+game_intro_pink_mask_l_s = 71
+game_intro_pink_mask_l_v = 73
+game_intro_pink_mask_u_h = 174
+game_intro_pink_mask_u_s = 255
+game_intro_pink_mask_u_v = 241
+
+game_outro_blue_mask_l_h = 100
+game_outro_blue_mask_l_s = 118
+game_outro_blue_mask_l_v = 42
+game_outro_blue_mask_u_h = 122
+game_outro_blue_mask_u_s = 255
+game_outro_blue_mask_u_v = 210
 
 # Arguments
 parser = argparse.ArgumentParser(description="Slagalica single video processor",
@@ -445,7 +459,7 @@ while success:
             cv2.waitKey(1)
         answerRectangleImage = originalFrame[seekAreaQuestionBorderLowerLineY:seekAreaAnswerBorderLowerLineY, seekAreaBorderLeftX:seekAreaBorderRightX].copy()
 
-        questionFrameVisible = isQuestionsFrameVisible(percentageOfAreaThreshold, blue_l_h, blue_l_s, blue_l_v, blue_u_h, blue_u_s, blue_u_v, questionRectangleImage)
+        questionFrameVisible = isQuestionsFrameVisible(percentageOfAreaThreshold, question_mask_blue_l_h, question_mask_blue_l_s, question_mask_blue_l_v, question_mask_blue_u_h, question_mask_blue_u_s, question_mask_blue_u_v, questionRectangleImage)
 
         answerCurrentPreProccessed = preprocessGetReadyForOCR(answerRectangleImage.copy(), lower_bound=241, upper_bound=255, 
                                                                 type=cv2.THRESH_BINARY, useGaussianBlurBefore=True, useBlurAfter=True).copy()

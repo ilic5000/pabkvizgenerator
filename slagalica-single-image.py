@@ -10,8 +10,11 @@ pytesseract.pytesseract.tesseract_cmd = r'C:\Program Files\Tesseract-OCR\tessera
 # Configuration ##################################################
 
 fileDir = 'examples'
-fileName = '2018.05.04 Slagalica.mp4-q1-22241-0-frame-original.jpg'
+fileName = '720p-intro1-mask-ready.png'
+fileName2 = '720p-intro2-mask-ready.png'
+
 filePath = "%s/%s"%(fileDir,fileName)
+filePath2 = "%s/%s"%(fileDir,fileName2)
 
 # Use tesseract by default
 forceEasyOCR = False
@@ -181,11 +184,12 @@ cv2.createTrackbar("Lower-H", "HSVTrackbarsBlue", 100, 180, nothing)
 cv2.createTrackbar("Lower-S", "HSVTrackbarsBlue", 118, 255, nothing)
 cv2.createTrackbar("Lower-V", "HSVTrackbarsBlue", 42, 255, nothing)
 
-cv2.createTrackbar("Upper-H", "HSVTrackbarsBlue", 120, 180, nothing)
+cv2.createTrackbar("Upper-H", "HSVTrackbarsBlue", 122, 180, nothing)
 cv2.createTrackbar("Upper-S", "HSVTrackbarsBlue", 255, 255, nothing)
 cv2.createTrackbar("Upper-V", "HSVTrackbarsBlue", 210, 255, nothing)
 
 image = cv2.imread(filePath)
+image2 = cv2.imread(filePath2)
 
 if image is None:
         print('Failed to load image file:', filePath)
@@ -198,6 +202,8 @@ hsvImage = cv2.cvtColor(image, cv2.COLOR_BGR2HSV)
 while True:
     # must be in the loop (reload empty image/frame)
     original_img_preview = cv2.resize(image, (0, 0), fx=resizeImagePercentage, fy=resizeImagePercentage)
+    original_img_preview2 = cv2.resize(image2, (0, 0), fx=resizeImagePercentage, fy=resizeImagePercentage)
+
     original_img_previewHeight, original_img_previewWidth, channels = original_img_preview.shape 
 
     seekAreaQuestionBorderUpperLineY = int(5.95 * int(original_img_previewHeight/10))
@@ -235,6 +241,16 @@ while True:
     blue_upper_hsv = numpy.array([blue_u_h, blue_u_s, blue_u_v])
     
     blue_mask = cv2.inRange(questionRectangleImageHsvImage, blue_lower_hsv, blue_upper_hsv)
+
+    original_img_previewhsv = cv2.cvtColor(original_img_preview.copy(), cv2.COLOR_BGR2HSV)
+    original_img_preview2hsv = cv2.cvtColor(original_img_preview2.copy(), cv2.COLOR_BGR2HSV)
+    firstimagemask = cv2.inRange(original_img_previewhsv, blue_lower_hsv, blue_upper_hsv)
+    secondimagemask = cv2.inRange(original_img_preview2hsv, blue_lower_hsv, blue_upper_hsv)
+
+    cv2.imshow("firstimage", original_img_preview)
+    cv2.imshow("secondimage", original_img_preview2)
+    cv2.imshow("firstimage mask", firstimagemask)
+    cv2.imshow("secondimage mask", secondimagemask)
 
     # Erode blue mask
     #kernelBlue = numpy.ones((3,3), numpy.uint8)

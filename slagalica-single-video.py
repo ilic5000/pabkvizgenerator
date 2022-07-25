@@ -18,11 +18,11 @@ defaultVideoFileToUse = ''
 
 # Use either Template matching ("True") or blue-pink mask/contour/area matching ("False")
 # The second one is better for low res video files and images
-gameRecognitionLogicForceTemplateMode = False
+gameRecognitionLogicForceTemplateMode = True
 
 # Used only when using mask/contour/area matching logic for game intro recognition
 gameRecognitionIntroThreshold = 0.8 # 1.0 is =width*height (0.8 is good for new game intro, 0.1 is good for old game intro behind tv host)
-gameRecognitionOutroThreshold = 0.8 # 1.0 is =width*height (?)
+gameRecognitionOutroThreshold = 0.4 # 1.0 is =width*height (? trial and error I guess...)
 
 # When switching between an empty answer rectangle and one with the answer there is a threshold for change detection 
 thresholdInNumberOfPixelsDifferenceInAnswerRectanglePercentage = 0.007 # (1.0 is width * height of the answer rectangle)
@@ -44,7 +44,7 @@ thresholdConfidenceLevelTemplateMatchingDesiredGameIntro = None
 thresholdConfidenceLevelTemplateMatchingNextGameIntro = None
 
 # Found contours area size treshold (percentage of whole rectangle)
-percentageOfAreaThreshold = 0.6
+percentageOfAreaThreshold = 0.4
 
 # Should be under 3300 or 0 when not debugging
 # If to large, can skip start of the game :)

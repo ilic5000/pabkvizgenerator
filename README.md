@@ -8,48 +8,48 @@
 Table of Contents
 =================
 
-* [Anansi - TV game show crawler](#anansi-tv-game-show-crawler)
-   * [Idea & Motivation](#idea-&-motivation)
+* [Anansi - TV game show crawler](#anansi---tv-game-show-crawler)
+   * [Idea & Motivation](#idea--motivation)
         * [Reason #1](#reason-1)
         * [Reason #2](#reason-2)
-    * [Results - extracted questions & answers](#results-extracted-questions-&-answers)
-        * [Slagalica questions/answers]()
-        * [Pot(j)era questions answers]()
-    * [Algorithm]()
-        * [General idea]()
-        * [Slagalica]()
-            * [Slagalica pseudo algorithm]()
-            * [Slagalica TV game show]()
-            * [Slagalica algorithm]()
-            * [Rules of the game]()
-            * [Finding the beginning and the end of the game]()
-                * [After 106. season]()
-                * [Before 106. season]()
-            * [Finding the frame with question]()
-            * [OCR processing of the frames with question and answers]()
-            * [Slagalica crawler example run]()
-        * [Pot(j)era]()
-            * [Pot(j)era pseudo algorithm]()
-            * [Pot(j)era algorithm]()
-            * [Rules of the game]()
-            * [Finding the green box with the correct answer]()
-            * [OCR processing of the frames with question and answers]()
-            * [Potera crawler example run]()
-    * [Optimization ideas]()
-    * [Future Roadmap]()
-    * [Known problems]()
-    * [How to run scripts locally]()
-        * [Script Requirements]()
-            * [Pot(j)era requirements]()
-            * [Slagalica requirements]()
-            * [Pytesseract on Windows]()
-        * [Main scripts]()
-        * [Additional helper scripts]()
-    * [Miscellaneous]()
-        * [Where to find TV show episodes?]()
-            * [Slagalica]()
-            * [Potera]()
-            * [Potjera]()
+    * [Results - extracted questions & answers](#results---extracted-questions--answers)
+        * [Slagalica questions/answers](#slagalica-more-than-24k-questions-and-answers)
+        * [Pot(j)era questions answers](#potjera-3k-questions-and-answers)
+    * [Algorithm](#algorithm)
+        * [General idea](#general-idea)
+        * [Slagalica](#slagalica)
+            * [Slagalica pseudo algorithm](#slagalica-pseudo-algorithm)
+            * [Slagalica TV game show](#slagalica-tv-game-show)
+            * [Slagalica algorithm](#slagalica-algorithm)
+            * [Rules of the game](#rules-of-the-game)
+            * [Finding the beginning and the end of the game](#finding-the-beginning-and-the-end-of-the-game)
+                * [After 106. season](#after-106th-season)
+                * [Before 106. season](#before-106th-season)
+            * [Finding the frame with question](#finding-the-frame-with-the-question)
+            * [OCR processing of the frames with question and answers](#ocr-processing-of-the-frames-with-question-and-answers)
+            * [Slagalica crawler example run](#slagalica-crawler-example-run)
+        * [Pot(j)era](#potjera)
+            * [Pot(j)era pseudo algorithm](#potjera-pseudo-algorithm)
+            * [Pot(j)era algorithm](#potjera-algorithm)
+            * [Rules of the game](#rules-of-the-game-1)
+            * [Finding the green box with the correct answer](#finding-the-green-box-with-the-correct-answer)
+            * [OCR processing of the frames with question and answers](#ocr-processing-of-the-frames-with-question-and-answers-1)
+            * [Potera crawler example run](#potera-crawler-example-run)
+    * [Optimization ideas](#optimization-ideas)
+    * [Future Roadmap](#future-roadmap)
+    * [Known problems](#known-problems)
+    * [How to run scripts locally](#how-to-run-scripts-locally)
+        * [Script Requirements](#script-requirements)
+            * [Pot(j)era requirements](#potjera-requirements)
+            * [Slagalica requirements](#slagalica-requirements)
+            * [Pytesseract on Windows](#pytesseract-on-windows)
+        * [Main scripts](#main-scripts)
+        * [Additional helper scripts](#additional-helper-scripts)
+    * [Miscellaneous](#miscellaneous)
+        * [Where to find TV show episodes?](#where-to-find-tv-show-episodes)
+            * [Slagalica](#slagalica-1)
+            * [Potera](#potera)
+            * [Potjera](#potjera-1)
 
 ## Idea & Motivation
 
@@ -70,16 +70,19 @@ After a couple of days, this is the project that I come up with.
 Learn something new. I've never, not since college anyway, done any computer vision work, and I didn't have any experience with OCRs too. So it was a really nice opportunity to venture into the unknown.
 
 ## Results - extracted questions & answers
-Before we start with the algorithm explanation, requirements, and how-to-use guides, here is a full version of all the extracted questions & answers to the episodes.
+Before we start with the algorithm explanation, how-to-use guides, and requirements, here is the full version of all the extracted questions & answers of the [youtube available episodes](#where-to-find-tv-show-episodes) of Slagalica and Pot(j)era. 
 
-### Slagalica
-Note: Episodes used `2019.11.02` to `2022.07.14` todo:
 
-### Potera
-Note: Episodes used YT channels... todo
+### Slagalica (more than 24k questions and answers)
 
-### Potjera
-Note: Episodes used YT channels... todo
+[https://tinyurl.com/anansi-slagalica](https://tinyurl.com/anansi-slagalica)
+
+### Pot(j)era (3k questions and answers)
+
+[https://tinyurl.com/anansi-pot(j)era](https://tinyurl.com/anansi-potera)
+
+
+**Note:** Slagalica has a lot more (24k > 3k) questions extracted simply because the Slagalica TV show has an [official youtube channel](https://www.youtube.com/channel/UCPYHhBsZpnBFOiiM5mfDf9w) where all recent episodes can be found. Pot(j)era does not have an official channel, and videos are often removed due to copyright infringements which in result leads to a very limited number of episodes circulating on the internet.
 
 ## Algorithm
 The following is the section explaining how everything works under the hood.
@@ -165,11 +168,12 @@ and with the template:
 You can find the next game intro, which is surely the previous game's end.
 
 ##### Before 106th season 
-Before the 106th season (before `4.5.2018`) the game intro was played on the big screen behind the TV show hosts. So this straightforward way of matching templates cannot work just as well as after the 106th season episodes. 
+Before the 106th season (before `4.5.2018`) the game intro was played on the big screen behind the TV show hosts. So this straightforward way of matching templates cannot work just as well as before the 106th season episodes. 
+
+However we can re-use the same logic [that is being used for Potera](#finding-the-green-box-with-the-correct-answer) (instead of template matching, use pink mask + contour area matching). 
 
 <img src="./docs/img/slagalica-stara-ko-zna-zna-intro-example.png" width="70%"/>
 
-TODO: Instead of template matching, use pink mask + contour matching with an area - NOT IMPLEMENTED YET
 
 #### Finding the frame with the question
 Now that we have the game start frame, we need to find the very first frame after that where the question rectangle is visible. Traditionally, the game has a rectangle-shaped area where questions and answers are shown.
@@ -315,7 +319,7 @@ Now when you know how everything works, here is a recording of the processing of
 Answer: СЕДАТИВ
 ```
 
-## Po(jera)
+## Pot(j)era
 
 ### Pot(j)era TV game show
 
@@ -428,20 +432,19 @@ Answer: Б Ресава
 ```
 
 ## Optimization ideas
-* In Slagalica if not all 10 questions are found, maybe rollback to the start of the game and then process it again but this time with lower fps 
+* In Slagalica if not all 10 questions are found, maybe rollback to the start of the game and then process it again but this time with lower processing fps 
 * Contour/shape recognition can maybe be achieved by using smart thresholds, but it will require a lot of testing and figuring out what setting works the best
 
 ## Future Roadmap
 
-* Handle 480p Slagalica 2014-2018 period
-* Do something with the data?
+* Do something with the data? Create a mobile app (video game)?
 * Slagalica algo can be modified to obtain texts from other games as well ("Asocijacije", "Spojnice", "Slagalica" etc.)
+* Add crawler implementation for Milioner TV game show
 
 ## Known problems
 * If there are both Latin and Cyrillic text in the questions/answers, sometimes tesseract can return really bad results (EasyOCR is, it seems, better at this)
 * In some episodes of Slagalica answer is not shown to the audience, instead, it immediately cuts to the intro of the next game (e.g. `14.11.2018.` episode)
 * On really rare occasions in Slagalica, question text can be seen above the question rectangle box (e.g. `18.06.2020.` episode)
-
 
 ## How to run scripts locally
 
@@ -500,11 +503,11 @@ Arguments:
 Potera batch processing (all video files are in the same directory) 
 
 ```
-`python potera-batch-video.py -srcdir "path"  -o "path"`
+python potera-batch-video.py -srcdir "path"  -o "path"
 ```
 For example:
 ```
-`python potera-batch-video.py -srcdir "E:\Potera\uradjeno-3"  -o "results" -lang "rs_cyrillic" -csv "questions.csv" -d True`
+python potera-batch-video.py -srcdir "E:\Potera\uradjeno-3"  -o "results" -lang "rs_cyrillic" -csv "questions.csv" -d True
 ```
 
 Arguments:
